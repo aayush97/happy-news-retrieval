@@ -41,7 +41,7 @@ def get_tweets(query, limit):
         df = pd.concat([df, row])   
     
 
-    filename = 'tweets.csv'
+    filename = '../data/tweets.csv'
 
     if os.path.exists(filename):
         df.to_csv(filename, mode='a', index=False, header=False)
