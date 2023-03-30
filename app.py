@@ -3,6 +3,8 @@ from slack_bolt import App, Say
 from slack_bolt.adapter.flask import SlackRequestHandler
 import os
 import re
+import psycopg2
+from flask import Flask, request, render_template
 
 app = Flask(__name__)
 
@@ -77,6 +79,21 @@ def slack_events():
 
 
 @ app.route("/", methods=["POST"])
+def retrieve_query_results():
+    return "Hi"
+
+
+def get_db_connection():
+    conn = psycopg2.connect(host='localhost',
+                            database="happy_news_retrieval_db",
+                            user="admin",
+                            password="admin")
+    # user=os.environ['DB_USERNAME'],
+    # password=os.environ['DB_PASSWORD']
+    return conn
+
+
+@app.route("/", methods=["POST"])
 def retrieve_query_results():
     return "Hi"
 
