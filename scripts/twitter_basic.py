@@ -23,6 +23,7 @@ ACCESS_SECRET = api_tokens["access_secret"]
 def get_tweets(query, limit):
 
     client = tweepy.Client(bearer_token=BEARER_TOKEN)
+
     # Replace with your own search query
 
     start_time = '2020-01-01T00:00:00Z'
@@ -31,7 +32,8 @@ def get_tweets(query, limit):
     if limit > 100:
         tweets = tweepy.Paginator(client.search_recent_tweets, query=query + ' -is:retweet', tweet_fields=['created_at'], max_results=100).flatten(limit=limit)
     else:
-        tweets = client.search_recent_tweets(query=query + ' -is:retweet', tweet_fields=['created_at'], max_results=limit).data
+        tweets = client.search_recent_tweets(query=query + ' -is:retweet', max_results=limit)
+        print(tweets)
 
     
     df = pd.DataFrame(columns=['id', 'text', 'query_string'])
@@ -41,25 +43,17 @@ def get_tweets(query, limit):
         df = pd.concat([df, row])   
     
 
-    filename = '../data/tweets.csv'
+    # filename = '../data/tweets.csv'
 
-    if os.path.exists(filename):
-        df.to_csv(filename, mode='a', index=False, header=False)
+    # if os.path.exists(filename):
+    #     df.to_csv(filename, mode='a', index=False, header=False)
 
-    else:    
-        df.to_csv(filename, mode='w', index=False, header=True)
+    # else:    
+    #     df.to_csv(filename, mode='w', index=False, header=True)
             
 
 
 # Driver code
 if __name__ == '__main__':
-    args = sys.argv[1:]
-    query_string = " ".join(args)
+    get_tweets('football', 10)
 
-    # query_strings = {'football': 100, 'soccer' : 100, 'layoffs':100, 'war':100, 'ukraine':50, 'election':50, 'elections':50,
-    #      'basketball':30, 'guns':30, 'crime':20, 'america':20, 'climate': 100}
-    # for query_string, limit in query_strings.items(): 
-    #     print("you queried: {}".format(query_string))
-    #     get_tweets(query_string, limit) 
-
-    get_tweets(query_string, 300)

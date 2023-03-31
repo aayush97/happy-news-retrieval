@@ -1,10 +1,18 @@
+from sentiment import get_goodness_score
+from twitter_apis import get_tweets
 from flask import Flask, request
 from slack_bolt import App, Say
 from slack_bolt.adapter.flask import SlackRequestHandler
 import os
 import re
 import psycopg2
-from flask import Flask, request, render_template
+from flask import Flask, request, render_template, jsonify
+import sys
+import json
+from controller import store_user_profile, store_tweets_returned
+
+sys.path.append("scripts")
+
 
 app = Flask(__name__)
 
@@ -93,9 +101,54 @@ def get_db_connection():
     return conn
 
 
-@app.route("/", methods=["POST"])
+"""
+api to get top 5 tweets for a query
+@request GET
+json:
+    parameters: user_id, query
+@returns top 5 tweets      
+"""
+
+
+@app.route("/tweets")
 def retrieve_query_results():
-    return "Hi"
+    request_data = request.get_json()
+    user_id = request_data['user_id']
+    query = request_data['query']
+
+    data = get_tweets(query)
+
+    goodness_Score = get_goodness_score(data)
+    sorted_goodness = sorted(goodness_Score, key=lambda x: x['score'])[::-1]
+
+    results = sorted_goodness[:5]
+    # store tweets returned in db
+    store_tweets_returned(query, results)
+
+    jsonList = json.dumps(results)
+
+    return jsonify(jsonList)
+
+
+"""
+api to store user interaction on clicks
+@request POST
+json:
+    parameters: user_id, tweet_id, query
+@returns "Success"   
+"""
+
+
+@app.route("/click", methods=["POST"])
+def store_user_profile():
+    request_data = request.get_json()
+    user_id = request_data['user_id']
+    tweet_id = request_data['tweet_id']
+    query = request_data['query']
+
+    # store user profile in db
+    store_user_profile(user_id, query, tweet_id)
+    return "Success", 200
 
 
 if __name__ == '__main__':

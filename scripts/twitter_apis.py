@@ -25,27 +25,35 @@ api = tweepy.API(auth)
 
 
 # Function to extract tweets
-def get_tweets(query):
+def get_tweets(query, limit=1000, type="popular"):
           
     tweets = tweepy.Cursor(api.search_tweets, 
-                   q="#covid19",
-                   lang='en',
-                   result_type="mixed",
-                   count=100).items(500)
+                   q=query + " -filter:retweets",
+                   tweet_mode='extended', 
+                   result_type=type,
+                   include_entities=True,
+                   lang='en').items(limit)
 
-    data = pd.DataFrame(data=[tweet.text for tweet in tweets], columns=['Tweets'])
-    data['len']  = np.array([len(tweet.text) for tweet in tweets])
-    data['ID']   = np.array([tweet.id for tweet in tweets])
-    data['Date'] = np.array([tweet.created_at for tweet in tweets])
-        
+    columns = ['id', 'tweet', 'length', 'query', 'time', 'screen_name', 'favorite_count', 'retweet_count']
+    data = []
 
-    filename = '../data/tweets.csv'
+    # Iterate through the results and append them to the list
+    for tweet in tweets:
+        data.append([tweet.id, tweet.full_text, 
+            len(tweet.full_text), query, tweet.created_at,
+            tweet.user.screen_name, tweet.favorite_count,
+            tweet.retweet_count])
+
+    # Create a dataframe with the results
+    df = pd.DataFrame(data, columns=columns)  
+
+    filename = '../data/tweets_for_query.csv'
 
     if os.path.exists(filename):
-        data.to_csv(filename, mode='a', index=False, header=False)
+        df.to_csv(filename, mode='a', index=False, header=False)
 
     else:    
-        data.to_csv(filename, mode='w', index=False, header=True)
+        df.to_csv(filename, mode='w', index=False, header=True)
 
 
 def get_tweets_user(user, query, limit=5000):
@@ -82,4 +90,4 @@ def get_tweets_user(user, query, limit=5000):
 # Driver code
 if __name__ == '__main__':
     get_tweets("football") 
-    get_tweets_user("goodnewsnetwork", "#covid19") 
+    #get_tweets_user("goodnewsnetwork", "#covid19") 
