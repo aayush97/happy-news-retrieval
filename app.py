@@ -1,17 +1,15 @@
-from sentiment import get_goodness_score
-from twitter_apis import get_tweets
-from flask import Flask, request
-from slack_bolt import App, Say
-from slack_bolt.adapter.flask import SlackRequestHandler
-import os
-import re
-import psycopg2
-from flask import Flask, request, render_template, jsonify
-import sys
-import json
 from controller import store_user_profile, store_tweets_returned
-
-sys.path.append("scripts")
+import json
+import sys
+from flask import Flask, request, render_template, jsonify
+import psycopg2
+import re
+import os
+from slack_bolt.adapter.flask import SlackRequestHandler
+from slack_bolt import App, Say
+from flask import Flask, request
+from scripts.twitter_apis import get_tweets
+from scripts.sentiment import get_goodness_score
 
 
 app = Flask(__name__)
@@ -87,7 +85,7 @@ def slack_events():
 
 
 @ app.route("/", methods=["POST"])
-def retrieve_query_results():
+def test_endpoint():
     return "Hi"
 
 
