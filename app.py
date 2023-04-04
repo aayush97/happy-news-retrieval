@@ -35,6 +35,15 @@ def help_command(say, ack):
                                 "type": "button",
                                 "text": {
                                         "type": "plain_text",
+                                        "text": "Any"
+                                },
+                                "value": "Any",
+                                "action_id": "category_any"
+                            },
+                            {
+                                "type": "button",
+                                "text": {
+                                        "type": "plain_text",
                                         "text": "Sports"
                                 },
                                 "value": "Sports",

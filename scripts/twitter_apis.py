@@ -24,7 +24,10 @@ api = tweepy.API(auth)
 
 
 # Function to extract tweets
-def get_tweets(query, limit=1000, type="popular"):
+def get_tweets(query, limit=100, type="popular"):
+
+    if query == 'Any':
+        query = ""
 
     tweets = tweepy.Cursor(api.search_tweets,
                            q=query + " -filter:retweets",
