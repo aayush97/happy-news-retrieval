@@ -1,8 +1,6 @@
 from controller import store_user_profile, store_tweets_returned
 import json
-import sys
-from flask import Flask, request, render_template, jsonify
-import psycopg2
+from flask import Flask, request, jsonify
 import re
 import os
 from slack_bolt.adapter.flask import SlackRequestHandler
@@ -71,8 +69,49 @@ def help_command(say, ack):
 def approve_request(ack, body, say):
     # Acknowledge action request
     ack()
+    user = body['user']
     category = body['actions'][0]['value']
-    say("You selected " + category)
+
+    data = get_tweets(category)
+
+    tweet_texts = []
+    for i in data:
+        tweet_texts.append(i[1])
+
+    goodness_score = get_goodness_score(tweet_texts)
+
+    for idx, data_row in enumerate(data):
+        data_row.append(goodness_score[idx])
+
+    data = sorted(data, key=lambda data: data[7])
+
+    data = data[:5]
+
+    blocks = []
+    blocks.append({
+        "type": "section",
+        "text": {
+                "type": "mrkdwn",
+            "text": "*"+category+"*"
+        }
+    })
+
+    for i in data:
+        blocks.append({
+            "type": "section",
+            "text": {
+                    "type": "mrkdwn",
+                    "text": i[1]
+            }
+        })
+        blocks.append({
+            "type": "divider"
+        })
+
+    text = {
+        "blocks": blocks
+    }
+    say(text=text)
 
 
 handler = SlackRequestHandler(bolt_app)
@@ -94,11 +133,11 @@ api to get top 5 tweets for a query
 @request GET
 json:
     parameters: user_id, query
-@returns top 5 tweets      
+@returns top 5 tweets
 """
 
 
-@app.route("/tweets")
+@ app.route("/tweets")
 def retrieve_query_results():
     request_data = request.get_json()
     user_id = request_data['user_id']
@@ -123,11 +162,11 @@ api to store user interaction on clicks
 @request POST
 json:
     parameters: user_id, tweet_id, query
-@returns "Success"   
+@returns "Success"
 """
 
 
-@app.route("/click", methods=["POST"])
+@ app.route("/click", methods=["POST"])
 def store_user_profile():
     request_data = request.get_json()
     user_id = request_data['user_id']
