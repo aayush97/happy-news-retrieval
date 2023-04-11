@@ -9,4 +9,4 @@ text_model = Data2VecTextModel.from_pretrained("facebook/data2vec-text-base")
 def text2vec(text):
     inputs = tokenizer(text, return_tensors="pt")
     outputs = text_model(**inputs)
-    return outputs[0].detach().numpy()
+    return outputs[1].detach().numpy()
