@@ -79,6 +79,12 @@ def help_command(say, ack):
 def record_click(ack, body, say):
     ack()
     user = body['user']
+    user_id = user['id']
+    user_name = user['username']
+
+    button_clicked = body['actions'][0]['value']
+
+    print(button_clicked)
     print(user)
 
 
@@ -133,12 +139,12 @@ def approve_request(ack, body, say):
         }
     })
 
-    for i in total_data:
+    for idx, data in enumerate(total_data):
         blocks.append({
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": i["description"]
+                "text": data["description"]
             },
             "accessory": {
                 "type": "button",
@@ -146,8 +152,8 @@ def approve_request(ack, body, say):
                     "type": "plain_text",
                     "text": "Link to article"
                 },
-                "value": "click_me_123",
-                "url": i["url"],
+                "value": "click_" + idx + "_category",
+                "url": data["url"],
                 "action_id": "click_feedback"
             }
         })
