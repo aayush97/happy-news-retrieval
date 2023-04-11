@@ -19,6 +19,9 @@ cur = conn.cursor()
 #                                  'name varchar (50) NOT NULL);'
 #                                 )
 
+cur.execute('CREATE TABLE users (id serial PRIMARY KEY,'
+                          'user_vector BYTEA NOT NULL);')
+
 cur.execute('CREATE TABLE tweets (id serial PRIMARY KEY,'
                                   'twitter_tweet_id bigint NOT NULL,'
                                   'query varchar (50) NOT NULL,'
