@@ -34,3 +34,28 @@ def store_tweets_returned(user, query, results):
 
     cur.close()
     conn.close()
+
+def create_user(user, user_vector):
+    cur = conn.cursor()
+
+    sql = """INSERT INTO users(id, user_vector)
+             VALUES(%s %s);"""
+
+    cur.execute(sql, (user, user_vector))
+    conn.commit()
+
+    cur.close()
+    conn.close()
+
+def update_user(user, user_vector):
+    cur = conn.cursor()
+
+    sql = """UPDATE users
+             SET user_vector = %s
+             WHERE id = %s;"""
+
+    cur.execute(sql, (user_vector, user))
+    conn.commit()
+
+    cur.close()
+    conn.close()
