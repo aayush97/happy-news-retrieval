@@ -26,12 +26,14 @@ api = tweepy.API(auth)
 # Function to extract tweets
 def get_tweets(query, limit=100, type="mixed"):
 
-    happy_terms = ["happy", "win", "heartwarming", "positive", "inspiring", "feel-good", "uplifting", "positive", "cute", "adorable", ]
+    happy_terms = ["happy", "win", "heartwarming", "positive", "inspiring",
+                   "feel-good", "uplifting", "positive", "cute", "adorable", ]
     negative_terms = ["loss", "lose", "negative", "sad"]
     if query == 'Any':
         query = ""
 
-    expanded_query = "(" + " OR ".join(happy_terms) + ") -(" + " OR ".join(negative_terms) + ") -filter:retweets " + query 
+    expanded_query = "(" + " OR ".join(happy_terms) + ") -(" + \
+        " OR ".join(negative_terms) + ") -filter:retweets " + query
     tweets = tweepy.Cursor(api.search_tweets,
                            q=expanded_query,
                            tweet_mode='extended',
@@ -44,27 +46,36 @@ def get_tweets(query, limit=100, type="mixed"):
     data = []
 
     # Iterate through the results and append them to the list
+
     for tweet in tweets:
         url = "https://twitter.com/twitter/status/" + str(tweet.id)
         if len(tweet.entities['urls']):
-             entities_url = tweet.entities['urls'][0]['url']
+            entities_url = tweet.entities['urls'][0]['url']
         else:
-             entities_url = ""     
-             
-        data.append([tweet.id, tweet.full_text,
-                     len(tweet.full_text), query, url, entities_url, tweet.created_at,
-                     tweet.user.screen_name, tweet.favorite_count,
-                     tweet.retweet_count])        
+            entities_url = ""
+
+        tweet_data = {
+            "id": tweet.id,
+            "description": tweet.full_text,
+            "url": url
+        }
+
+        data.append(tweet_data)
+
+        # data.append([tweet.id, tweet.full_text,
+        #              len(tweet.full_text), query, tweet.created_at,
+        #              tweet.user.screen_name, tweet.favorite_count,
+        #              tweet.retweet_count])
 
     # Create a dataframe with the results
-    df = pd.DataFrame(data, columns=columns)
-    filename = os.path.join(os.getcwd(), 'data/tweets_for_query.csv')
+    # df = pd.DataFrame(data, columns=columns)
+    # filename = os.path.join(os.getcwd(), 'data/tweets_for_query.csv')
 
-    if os.path.exists(filename):
-        df.to_csv(filename, mode='a', index=False, header=False)
+    # if os.path.exists(filename):
+    #     df.to_csv(filename, mode='a', index=False, header=False)
 
-    else:
-        df.to_csv(filename, mode='w', index=False, header=True)
+    # else:
+    #     df.to_csv(filename, mode='w', index=False, header=True)
 
     return data
 
@@ -83,11 +94,11 @@ def get_tweets_user(user, query, limit=5000):
 
     # Iterate through the results and append them to the list
     for tweet in tweets:
-        url = "https://twitter.com/twitter/status/" + str(tweet.id) 
+        url = "https://twitter.com/twitter/status/" + str(tweet.id)
         if len(tweet.entities['urls']):
-             entities_url = tweet.entities['urls'][0]['url']
+            entities_url = tweet.entities['urls'][0]['url']
         else:
-             entities_url = "" 
+            entities_url = ""
 
         data.append([tweet.id, tweet.full_text,
                      len(tweet.full_text), url, entities_url, tweet.created_at,

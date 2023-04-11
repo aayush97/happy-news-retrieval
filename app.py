@@ -8,7 +8,8 @@ from slack_bolt import App, Say
 from flask import Flask, request
 from scripts.twitter_apis import get_tweets
 from scripts.sentiment import get_goodness_score
-
+from scripts.news_basic import get_news
+import numpy as np
 
 app = Flask(__name__)
 
@@ -88,20 +89,40 @@ def approve_request(ack, body, say):
     user = body['user']
     category = body['actions'][0]['value']
 
-    data = get_tweets(category)
+    tweet_data = get_tweets(category)
 
+    # Twitter
     tweet_texts = []
-    for i in data:
-        tweet_texts.append(i[1])
+    for i in tweet_data:
+        tweet_texts.append(i["description"])
 
     goodness_score = get_goodness_score(tweet_texts)
 
-    for idx, data_row in enumerate(data):
-        data_row.append(goodness_score[idx])
+    for idx, data_row in enumerate(tweet_data):
+        data_row["score"] = (goodness_score[idx])
 
-    data = sorted(data, key=lambda data: data[7])
+    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
 
-    data = data[:5]
+    tweet_data = tweet_data[:5]
+
+    # News
+    news_data = get_news(category)
+    news_data = news_data['articles']
+
+    news_texts = []
+    for i in news_data:
+        news_texts.append(i["description"])
+
+    goodness_score = get_goodness_score(news_texts)
+
+    for idx, data_row in enumerate(news_data):
+        data_row["score"] = goodness_score[idx]
+
+    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+    news_data = news_data[:5]
+
+    total_data = tweet_data + news_data
+    total_data = np.random.choice(total_data, size=5, replace=False)
 
     blocks = []
     blocks.append({
@@ -112,12 +133,12 @@ def approve_request(ack, body, say):
         }
     })
 
-    for i in data:
+    for i in total_data:
         blocks.append({
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": i[1]
+                "text": i["description"]
             },
             "accessory": {
                 "type": "button",
