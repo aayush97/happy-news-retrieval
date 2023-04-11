@@ -144,10 +144,10 @@ def approve_request(ack, body, say):
                 "type": "button",
                 "text": {
                     "type": "plain_text",
-                    "text": "Click Me"
+                    "text": "Link to article"
                 },
                 "value": "click_me_123",
-                "url": "https://google.com",
+                "url": i["url"],
                 "action_id": "click_feedback"
             }
         })
