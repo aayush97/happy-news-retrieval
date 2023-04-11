@@ -3,12 +3,12 @@ import psycopg2
 
 # we can store the credentials in env variables later
 conn = psycopg2.connect(
-        host="localhost",
-        database="happy_news_retrieval_db",
-        user="admin",
-        password="admin")
-        # user=os.environ['DB_USERNAME'],
-        # password=os.environ['DB_PASSWORD'])
+    host="localhost",
+    database="happy_news_retrieval_db",
+    user="admin",
+    password="admin")
+# user=os.environ['DB_USERNAME'],
+# password=os.environ['DB_PASSWORD'])
 
 
 # Open a cursor to perform database operations
@@ -19,26 +19,29 @@ cur = conn.cursor()
 #                                  'name varchar (50) NOT NULL);'
 #                                 )
 
-cur.execute('CREATE TABLE users (id serial PRIMARY KEY,'
-                          'user_vector BYTEA NOT NULL);')
+cur.execute('CREATE TABLE users (id serial PRIMARY KEY,' 'slack_user_id varchar (50) NOT NULL,' 'slack_user_name varchar (50) NOT NULL,'
+            'user_vector BYTEA NOT NULL);')
 
-cur.execute('CREATE TABLE tweets (id serial PRIMARY KEY,'
-                                  'twitter_tweet_id bigint NOT NULL,'
-                                  'query varchar (50) NOT NULL,'
-                                  'document text NOT NULL);'
-                                )
+cur.execute('CREATE TABLE articles (id serial PRIMARY KEY,'
+            'article_external_id varchar (50) NOT NULL,'
+            'query varchar (50) NOT NULL,'
+            'document text NOT NULL);'
+            )
 
-cur.execute('CREATE TABLE user_interactions (id serial PRIMARY KEY,'     
-                                  'number_of_clicks int NOT NULL,'
-                                  'query varchar (50) NOT NULL,'
-                                  'category varchar (50) NOT NULL,'
-                                  'user_id integer REFERENCES users (id),'
-                                  'tweet_id integer REFERENCES tweets (id));'
-                                )
+cur.execute('CREATE TABLE user_interactions (id serial PRIMARY KEY,'
+            'user_clicked bool NOT NULL,'
+            'query varchar (50) NOT NULL,'
+            'category varchar (50) NOT NULL,'
+            'slack_user_id varchar (50) NOT NULL,'
+            'slack_user_name varchar (50) NOT NULL,'
+            'article_external_id varchar (50) NOT NULL,'
+            'user_id integer REFERENCES users (id),'
+            'article_id integer REFERENCES articles (id));'
+            )
 
 # Insert data into the table
 
-cur.execute('INSERT INTO tweets (twitter_tweet_id, query, document)'
+cur.execute('INSERT INTO articles (article_external_id, query, document)'
             'VALUES (%s, %s, %s)',
             ('1631414076810362883',
              'animals',
