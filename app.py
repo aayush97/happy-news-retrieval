@@ -74,6 +74,13 @@ def help_command(say, ack):
     say(text=text)
 
 
+@bolt_app.action("click_feedback")
+def record_click(ack, body, say):
+    ack()
+    user = body['user']
+    print(user)
+
+
 @bolt_app.action(re.compile("(category)"))
 def approve_request(ack, body, say):
     # Acknowledge action request
@@ -109,8 +116,18 @@ def approve_request(ack, body, say):
         blocks.append({
             "type": "section",
             "text": {
-                    "type": "mrkdwn",
-                    "text": i[1]
+                "type": "mrkdwn",
+                "text": i[1]
+            },
+            "accessory": {
+                "type": "button",
+                "text": {
+                    "type": "plain_text",
+                    "text": "Click Me"
+                },
+                "value": "click_me_123",
+                "url": "https://google.com",
+                "action_id": "click_feedback"
             }
         })
         blocks.append({
