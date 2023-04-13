@@ -152,7 +152,7 @@ def approve_request(ack, body, say):
                     "type": "plain_text",
                     "text": "Link to article"
                 },
-                "value": "click_" + idx + "_category",
+                "value": "click_" + str(idx) + "_category",
                 "url": data["url"],
                 "action_id": "click_feedback"
             }
