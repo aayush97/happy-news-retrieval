@@ -1,4 +1,3 @@
-from controller import store_user_profile, store_tweets_returned
 import json
 from flask import Flask, request, jsonify
 import re
@@ -10,8 +9,91 @@ from scripts.twitter_apis import get_tweets
 from scripts.sentiment import get_goodness_score
 from scripts.news_basic import get_news
 import numpy as np
+import app
+from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://admin:admin@localhost:5432/happy_news_retrieval_db"
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy()
+db.init_app(app)
+
+
+class User(db.Model):
+    __tablename__ = 'users'
+
+    id = db.Column(db.Integer, primary_key=True)
+    slack_user_id = db.Column(db.String(50), nullable=False)
+    slack_user_name = db.Column(db.String(100), nullable=False)
+
+    @property
+    def serialize(self):
+      return {
+          'id': self.id,
+          'slack_user_id': self.slack_user_id,
+          'slack_user_name': self.slack_user_name,
+      }
+    
+    
+class Article(db.Model):
+    __tablename__ = 'articles'
+
+    id = db.Column(db.Integer, primary_key=True)
+    article_external_id = db.Column(db.String(50), nullable=False)
+    query = db.Column(db.String(100), nullable=False)
+    document = db.Column(db.String(1000), nullable=False)
+    
+    @property
+    def serialize(self):
+      return {
+          'id': self.id,
+          'article_external_id': self.article_external_id,
+          'query': self.query,
+          'document': self.document
+      }
+    
+class Tweet(db.Model):
+    __tablename__ = 'tweets'
+
+    id = db.Column(db.Integer, primary_key=True)
+    query = db.Column(db.String(100), nullable=False)
+    documents = db.Column(db.String(1000))
+    
+    @property
+    def serialize(self):
+      return {
+          'id': self.id,
+          'query': self.query,
+          'documents': self.documents
+      }
+
+class UserInteraction(db.Model):
+    __tablename__ = 'user_interactions'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_clicked = db.Column(db.Boolean, nullable=False)
+    query = db.Column(db.String(100), nullable=False)
+    category = db.Column(db.String(100), nullable=False)
+    slack_user_id = db.Column(db.String(50), nullable=False)
+    slack_user_name = db.Column(db.String(100), nullable=False)
+    article_external_id = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    article_id = db.Column(db.Integer, db.ForeignKey('articles.id'))
+
+
+    @property
+    def serialize(self):
+      return {
+          'id': self.id,
+          'user_clicked': self.user_clicked,
+          'query': self.query,
+          'category': self.category,
+          'slack_user_id': self.article_user_id,
+          'slack_user_name': self.slack_user_name,
+          'article_external_id': self.article_external_id,
+          'user_id': self.user_id,
+          'article_id': self.article_id
+      }
 
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
@@ -203,7 +285,9 @@ def retrieve_query_results():
 
     results = sorted_goodness[:5]
     # store tweets returned in db
-    store_tweets_returned(query, results)
+    tweets = Tweet(query, document=results)
+    db.session.add(tweets)
+    db.session.commit()
 
     jsonList = json.dumps(results)
 
@@ -227,8 +311,11 @@ def store_user_profile():
     query = request_data['query']
 
     # store user profile in db
-    store_user_profile(user_id, query, tweet_id)
+    interaction = UserInteraction(user_id, query, tweet_id)
+    db.session.add(interaction)
+    db.session.commit()
     return "Success", 200
+
 
 
 if __name__ == '__main__':
