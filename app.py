@@ -11,6 +11,7 @@ from scripts.news_basic import get_news
 import numpy as np
 import app
 from flask_sqlalchemy import SQLAlchemy
+import pickle
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://admin:admin@localhost:5432/happy_news_retrieval_db"
@@ -28,13 +29,13 @@ class User(db.Model):
 
     @property
     def serialize(self):
-      return {
-          'id': self.id,
-          'slack_user_id': self.slack_user_id,
-          'slack_user_name': self.slack_user_name,
-      }
-    
-    
+        return {
+            'id': self.id,
+            'slack_user_id': self.slack_user_id,
+            'slack_user_name': self.slack_user_name,
+        }
+
+
 class Article(db.Model):
     __tablename__ = 'articles'
 
@@ -42,30 +43,32 @@ class Article(db.Model):
     article_external_id = db.Column(db.String(50), nullable=False)
     query = db.Column(db.String(100), nullable=False)
     document = db.Column(db.String(1000), nullable=False)
-    
+
     @property
     def serialize(self):
-      return {
-          'id': self.id,
-          'article_external_id': self.article_external_id,
-          'query': self.query,
-          'document': self.document
-      }
-    
+        return {
+            'id': self.id,
+            'article_external_id': self.article_external_id,
+            'query': self.query,
+            'document': self.document
+        }
+
+
 class Tweet(db.Model):
     __tablename__ = 'tweets'
 
     id = db.Column(db.Integer, primary_key=True)
     query = db.Column(db.String(100), nullable=False)
     documents = db.Column(db.String(1000))
-    
+
     @property
     def serialize(self):
-      return {
-          'id': self.id,
-          'query': self.query,
-          'documents': self.documents
-      }
+        return {
+            'id': self.id,
+            'query': self.query,
+            'documents': self.documents
+        }
+
 
 class UserInteraction(db.Model):
     __tablename__ = 'user_interactions'
@@ -80,20 +83,20 @@ class UserInteraction(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     article_id = db.Column(db.Integer, db.ForeignKey('articles.id'))
 
-
     @property
     def serialize(self):
-      return {
-          'id': self.id,
-          'user_clicked': self.user_clicked,
-          'query': self.query,
-          'category': self.category,
-          'slack_user_id': self.article_user_id,
-          'slack_user_name': self.slack_user_name,
-          'article_external_id': self.article_external_id,
-          'user_id': self.user_id,
-          'article_id': self.article_id
-      }
+        return {
+            'id': self.id,
+            'user_clicked': self.user_clicked,
+            'query': self.query,
+            'category': self.category,
+            'slack_user_id': self.article_user_id,
+            'slack_user_name': self.slack_user_name,
+            'article_external_id': self.article_external_id,
+            'user_id': self.user_id,
+            'article_id': self.article_id
+        }
+
 
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
@@ -168,6 +171,61 @@ def record_click(ack, body, say):
 
     print(button_clicked)
     print(user)
+
+
+# @app.route('/user', methods=['POST'])
+# def add_user():
+#     # slack_user_id, slack_user_name, user_vector
+#     slack_user_id = 1
+#     slack_user_name = "test"
+#     user_vector = np.random.rand(1, 300)
+#     user = User(slack_user_id=slack_user_id,
+#                 slack_user_name=slack_user_name, user_vector=pickle.dumps(user_vector))
+#     db.session.add(user)
+#     db.session.commit()
+#     return jsonify(user.serialize)
+
+
+@app.route('/category', methods=['POST'])
+def events():
+    request_data = request.get_json()
+    # user = body['user']
+    # category = body['actions'][0]['value']
+    category = request_data['action']
+    tweet_data = get_tweets(category)
+
+    # Twitter
+    tweet_texts = []
+    for i in tweet_data:
+        tweet_texts.append(i["description"])
+
+    goodness_score = get_goodness_score(tweet_texts)
+    for idx, data_row in enumerate(tweet_data):
+        data_row["score"] = (goodness_score[idx])
+
+    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
+
+    tweet_data = tweet_data[:5]
+
+    # News
+    news_data = get_news(category)
+    news_data = news_data['articles']
+
+    news_texts = []
+    for i in news_data:
+        news_texts.append(i["description"])
+
+    goodness_score = get_goodness_score(news_texts)
+
+    for idx, data_row in enumerate(news_data):
+        data_row["score"] = goodness_score[idx]
+
+    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+    news_data = news_data[:5]
+
+    total_data = tweet_data + news_data
+    total_data = np.random.choice(total_data, size=5, replace=False)
+    return jsonify(total_data.tolist())
 
 
 @bolt_app.action(re.compile("(category)"))
@@ -315,7 +373,6 @@ def store_user_profile():
     db.session.add(interaction)
     db.session.commit()
     return "Success", 200
-
 
 
 if __name__ == '__main__':
