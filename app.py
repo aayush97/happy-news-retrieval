@@ -25,10 +25,12 @@ class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     slack_user_id = db.Column(db.String(50), nullable=False)
     slack_user_name = db.Column(db.String(100), nullable=False)
+    user_vector = db.Column(db.LargeBinary, nullable=False)
 
-    def __init__(self, slack_user_id, slack_user_name):
+    def __init__(self, slack_user_id, slack_user_name, user_vector):
         self.slack_user_id = slack_user_id
         self.slack_user_name = slack_user_name
+        self.user_vector = user_vector
 
     @property
     def serialize(self):
@@ -296,6 +298,7 @@ json:
     parameters: user_id, query
 @returns top 5 tweets
 """
+
 
 @ app.route("/tweets")
 def retrieve_query_results():
