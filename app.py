@@ -11,7 +11,7 @@ from scripts.news_basic import get_news
 import numpy as np
 import app
 from flask_sqlalchemy import SQLAlchemy
-import pickle
+import io
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://admin:admin@localhost:5432/happy_news_retrieval_db"
@@ -199,19 +199,27 @@ def record_click(ack, body, say):
 
 
 # @app.route('/user', methods=['POST'])
-# def add_user():
-#     # slack_user_id, slack_user_name, user_vector
-#     slack_user_id = 1
-#     slack_user_name = "test"
-#     user_vector = np.random.rand(1, 300)
-#     user = User(slack_user_id=slack_user_id,
-#                 slack_user_name=slack_user_name, user_vector=pickle.dumps(user_vector))
-#     db.session.add(user)
-#     db.session.commit()
-#     return jsonify(user.serialize)
+def add_user(slack_user_id, slack_user_name, user_vector):
+    # slack_user_id, slack_user_name, user_vector
+    # slack_user_id = 1
+    # slack_user_name = "test"
+    # user_vector = np.random.rand(1, 300)
+    user = User(slack_user_id=slack_user_id,
+                slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
+    db.session.add(user)
+    db.session.commit()
+    return jsonify(user.serialize)
 
 
-@app.route('/category', methods=['POST'])
+def update_user(slack_user_id, slack_user_name, user_vector):
+    user = User.query.filter_by(slack_user_id=slack_user_id).first()
+    user.slack_user_name = slack_user_name
+    user.user_vector = user_vector.tobytes()
+    db.session.commit()
+    return jsonify(user.serialize)
+
+
+@ app.route('/category', methods=['POST'])
 def events():
     request_data = request.get_json()
     # user = body['user']
@@ -253,7 +261,7 @@ def events():
     return jsonify(total_data.tolist())
 
 
-@bolt_app.action(re.compile("(category)"))
+@ bolt_app.action(re.compile("(category)"))
 def approve_request(ack, body, say):
     # Acknowledge action request
     ack()
