@@ -11,6 +11,7 @@ from scripts.news_basic import get_news
 import numpy as np
 from flask_sqlalchemy import SQLAlchemy
 import io
+from scripts.user_model import get_initial_user_vector
 
 # database setup
 app = Flask(__name__)
@@ -109,7 +110,7 @@ def add_user(slack_user_id, slack_user_name, user_vector):
                 slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
     db.session.add(user)
     db.session.commit()
-    return jsonify(user.serialize)
+    return (user.serialize)
 
 
 def update_user(slack_user_id, slack_user_name, user_vector):
@@ -117,7 +118,7 @@ def update_user(slack_user_id, slack_user_name, user_vector):
     user.slack_user_name = slack_user_name
     user.user_vector = user_vector.tobytes()
     db.session.commit()
-    return jsonify(user.serialize)
+    return (user.serialize)
 
 
 @ app.route('/category', methods=['POST'])
@@ -162,83 +163,94 @@ def events():
     return jsonify(total_data.tolist())
 
 
-@ bolt_app.action(re.compile("(category)"))
+@bolt_app.action(re.compile("(category)"))
 def approve_request(ack, body, say):
-    # Acknowledge action request
-    ack()
-    user = body['user']
-    category = body['actions'][0]['value']
+    with app.app_context():
+        # Acknowledge action request
+        ack()
+        user = body['user']
+        category = body['actions'][0]['value']
 
-    tweet_data = get_tweets(category)
+        slack_user_id = user['id']
+        slack_username = user['username']
 
-    # Twitter
-    tweet_texts = []
-    for i in tweet_data:
-        tweet_texts.append(i["description"])
+        initial_uv = get_initial_user_vector()
+        user = User.query.filter_by(slack_user_id=slack_user_id).first()
+        print(user.serialize)
+        user = add_user(slack_user_id, slack_username, initial_uv)
 
-    goodness_score = get_goodness_score(tweet_texts)
+        print(user)
 
-    for idx, data_row in enumerate(tweet_data):
-        data_row["score"] = (goodness_score[idx])
+        tweet_data = get_tweets(category)
 
-    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
+        # Twitter
+        tweet_texts = []
+        for i in tweet_data:
+            tweet_texts.append(i["description"])
 
-    tweet_data = tweet_data[:5]
+        goodness_score = get_goodness_score(tweet_texts)
 
-    # News
-    news_data = get_news(category)
-    news_data = news_data['articles']
+        for idx, data_row in enumerate(tweet_data):
+            data_row["score"] = (goodness_score[idx])
 
-    news_texts = []
-    for i in news_data:
-        news_texts.append(i["description"])
+        tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
 
-    goodness_score = get_goodness_score(news_texts)
+        tweet_data = tweet_data[:5]
 
-    for idx, data_row in enumerate(news_data):
-        data_row["score"] = goodness_score[idx]
+        # News
+        news_data = get_news(category)
+        news_data = news_data['articles']
 
-    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-    news_data = news_data[:5]
+        news_texts = []
+        for i in news_data:
+            news_texts.append(i["description"])
 
-    total_data = tweet_data + news_data
-    total_data = np.random.choice(total_data, size=5, replace=False)
+        goodness_score = get_goodness_score(news_texts)
 
-    blocks = []
-    blocks.append({
-        "type": "section",
-        "text": {
-                "type": "mrkdwn",
-            "text": "*"+category+"*"
-        }
-    })
+        for idx, data_row in enumerate(news_data):
+            data_row["score"] = goodness_score[idx]
 
-    for idx, data in enumerate(total_data):
+        news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+        news_data = news_data[:5]
+
+        total_data = tweet_data + news_data
+        total_data = np.random.choice(total_data, size=5, replace=False)
+
+        blocks = []
         blocks.append({
             "type": "section",
             "text": {
-                "type": "mrkdwn",
-                "text": data["description"]
-            },
-            "accessory": {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Link to article"
-                },
-                "value": "click_" + str(idx) + "_category",
-                "url": data["url"],
-                "action_id": "click_feedback"
+                    "type": "mrkdwn",
+                "text": "*"+category+"*"
             }
         })
-        blocks.append({
-            "type": "divider"
-        })
 
-    text = {
-        "blocks": blocks
-    }
-    say(text=text)
+        for idx, data in enumerate(total_data):
+            blocks.append({
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": data["description"]
+                },
+                "accessory": {
+                    "type": "button",
+                    "text": {
+                        "type": "plain_text",
+                        "text": "Link to article"
+                    },
+                    "value": "click_" + str(idx) + "_category",
+                    "url": data["url"],
+                    "action_id": "click_feedback"
+                }
+            })
+            blocks.append({
+                "type": "divider"
+            })
+
+        text = {
+            "blocks": blocks
+        }
+        say(text=text)
 
 
 handler = SlackRequestHandler(bolt_app)
