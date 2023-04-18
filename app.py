@@ -1,3 +1,4 @@
+from models import *
 import json
 from flask import Flask, request, jsonify
 import re
@@ -20,9 +21,8 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy()
 db.init_app(app)
 
-from models import *
 with app.app_context():
-    db.create_all() 
+    db.create_all()
 
 
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
@@ -89,23 +89,26 @@ def help_command(say, ack):
 
 @bolt_app.action("click_feedback")
 def record_click(ack, body, say):
-    ack()
-    user = body['user']
-    user_id = user['id']
-    user_name = user['username']
+    with app.app_context():
+        ack()
+        user = body['user']
+        slack_user_id = user['id']
+        slack_username = user['username']
 
-    button_clicked = body['actions'][0]['value']
+        user = User.query.filter_by(slack_user_id=slack_user_id).first()
+        if user is None:
+            initial_uv = get_initial_user_vector()
+            user = add_user(slack_user_id, slack_username, initial_uv)
 
-    print(button_clicked)
-    print(user)
+        print(user)
+
+        button_clicked = body['actions'][0]['value']
+
+        print(button_clicked)
+        print(user)
 
 
-# @app.route('/user', methods=['POST'])
 def add_user(slack_user_id, slack_user_name, user_vector):
-    # slack_user_id, slack_user_name, user_vector
-    # slack_user_id = 1
-    # slack_user_name = "test"
-    # user_vector = np.random.rand(1, 300)
     user = User(slack_user_id=slack_user_id,
                 slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
     db.session.add(user)
@@ -170,16 +173,6 @@ def approve_request(ack, body, say):
         ack()
         user = body['user']
         category = body['actions'][0]['value']
-
-        slack_user_id = user['id']
-        slack_username = user['username']
-
-        initial_uv = get_initial_user_vector()
-        user = User.query.filter_by(slack_user_id=slack_user_id).first()
-        print(user.serialize)
-        user = add_user(slack_user_id, slack_username, initial_uv)
-
-        print(user)
 
         tweet_data = get_tweets(category)
 
@@ -274,6 +267,7 @@ json:
     parameters: user_id, query
 @returns top 5 tweets
 """
+
 
 @ app.route("/tweets")
 def retrieve_query_results():
