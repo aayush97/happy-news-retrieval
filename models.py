@@ -20,6 +20,7 @@ class User(db.Model):
         'id': self.id,
         'slack_user_id': self.slack_user_id,
         'slack_user_name': self.slack_user_name,
+        'user_vector': self.user_vector
       }
     
     

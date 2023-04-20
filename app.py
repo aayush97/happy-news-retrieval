@@ -13,6 +13,7 @@ import numpy as np
 import io
 from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
+from scripts.user_model import update_user_vector_cosine_similarity
 
 # database setup
 app = Flask(__name__)
@@ -116,11 +117,15 @@ def record_click(ack, body, say):
         slack_user_id = user['id']
         slack_username = user['username']
 
-        
-        button_clicked = body['actions'][0]['value']
-
-        print(button_clicked)
-        print(user)
+        user = User.query.filter_by(slack_user_id=slack_user_id).first()
+        article_no_clicked = body['actions'][0]['value']
+        print(article_no_clicked)
+        Article.query.filter_by(id=article_no_clicked).first()
+        article = Article.query.get(int(article_no_clicked)).first()
+        print(article.serialize)
+        user = user.serialize
+        user_vector = (list(user['user_vector']))
+        #updated_user_vector = update_user_vector_cosine_similarity(user_vector)
 
 @ app.route('/category', methods=['POST'])
 def events():
@@ -174,11 +179,9 @@ def approve_request(ack, body, say):
         slack_user_id = user['id']
         slack_username = user['username']
 
-        #user = User.query.filter_by(slack_user_id=slack_user_id).first()
-        #user = add_user(slack_user_id, slack_username, initial_uv)
         user = User.query.filter_by(slack_user_id=slack_user_id).first()
-
         if user is None:
+            print(f'{slack_username} didnt exist. Creating user...')
             initial_uv = get_initial_user_vector()
             user = add_user(slack_user_id, slack_username, initial_uv)
 
@@ -324,7 +327,6 @@ def store_user_profile():
     db.session.add(interaction)
     db.session.commit()
     return "Success", 200
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
