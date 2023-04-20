@@ -16,6 +16,7 @@ from scripts.user_model import get_initial_user_vector
 
 # database setup
 app = Flask(__name__)
+
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://admin:admin@localhost:5432/happy_news_retrieval_db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy()
@@ -23,7 +24,6 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
-
 
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
@@ -86,34 +86,19 @@ def help_command(say, ack):
     }
     say(text=text)
 
-
-@bolt_app.action("click_feedback")
-def record_click(ack, body, say):
-    with app.app_context():
-        ack()
-        user = body['user']
-        slack_user_id = user['id']
-        slack_username = user['username']
-
-        user = User.query.filter_by(slack_user_id=slack_user_id).first()
-        if user is None:
-            initial_uv = get_initial_user_vector()
-            user = add_user(slack_user_id, slack_username, initial_uv)
-
-        print(user)
-
-        button_clicked = body['actions'][0]['value']
-
-        print(button_clicked)
-        print(user)
-
-
 def add_user(slack_user_id, slack_user_name, user_vector):
     user = User(slack_user_id=slack_user_id,
                 slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
     db.session.add(user)
     db.session.commit()
     return (user.serialize)
+
+def add_article(document, article_external_id ="", query = ""):
+    article = Article(document=document,
+                      article_external_id=article_external_id, query=query)
+    db.session.add(article)
+    db.session.commit()
+    return (article.serialize)
 
 
 def update_user(slack_user_id, slack_user_name, user_vector):
@@ -123,6 +108,23 @@ def update_user(slack_user_id, slack_user_name, user_vector):
     db.session.commit()
     return (user.serialize)
 
+def user_exists(slack_user_id):
+    exists = print(User.query.filter_by(slack_user_id=slack_user_id).first())
+    return exists
+
+@bolt_app.action("click_feedback")
+def record_click(ack, body, say):
+    with app.app_context():
+        ack()
+        user = body['user']
+        slack_user_id = user['id']
+        slack_username = user['username']
+
+        
+        button_clicked = body['actions'][0]['value']
+
+        print(button_clicked)
+        print(user)
 
 @ app.route('/category', methods=['POST'])
 def events():
@@ -173,6 +175,16 @@ def approve_request(ack, body, say):
         ack()
         user = body['user']
         category = body['actions'][0]['value']
+        slack_user_id = user['id']
+        slack_username = user['username']
+
+        #user = User.query.filter_by(slack_user_id=slack_user_id).first()
+        #user = add_user(slack_user_id, slack_username, initial_uv)
+        print(user_exists(slack_user_id))
+
+        if not user_exists(slack_user_id):
+            initial_uv = get_initial_user_vector()
+            user = add_user(slack_user_id, slack_username, initial_uv)
 
         tweet_data = get_tweets(category)
 
@@ -209,6 +221,10 @@ def approve_request(ack, body, say):
         total_data = tweet_data + news_data
         total_data = np.random.choice(total_data, size=5, replace=False)
 
+        for article in total_data:
+            article_db = add_article(article["description"])
+            article["db_id"] = article_db["id"]
+
         blocks = []
         blocks.append({
             "type": "section",
@@ -231,7 +247,7 @@ def approve_request(ack, body, say):
                         "type": "plain_text",
                         "text": "Link to article"
                     },
-                    "value": "click_" + str(idx) + "_category",
+                    "value": str(data["db_id"]),
                     "url": data["url"],
                     "action_id": "click_feedback"
                 }
