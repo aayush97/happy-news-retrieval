@@ -10,20 +10,20 @@ from scripts.twitter_apis import get_tweets
 from scripts.sentiment import get_goodness_score
 from scripts.news_basic import get_news
 import numpy as np
-from flask_sqlalchemy import SQLAlchemy
 import io
 from scripts.user_model import get_initial_user_vector
+from scripts.doc2vector import text2vec
 
 # database setup
 app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://admin:admin@localhost:5432/happy_news_retrieval_db"
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy()
 db.init_app(app)
 
-with app.app_context():
-    db.create_all()
+# with app.app_context():
+#     db.create_all()
+# USE THIS ONLY ONCE^
 
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
@@ -108,10 +108,6 @@ def update_user(slack_user_id, slack_user_name, user_vector):
     db.session.commit()
     return (user.serialize)
 
-def user_exists(slack_user_id):
-    exists = print(User.query.filter_by(slack_user_id=slack_user_id).first())
-    return exists
-
 @bolt_app.action("click_feedback")
 def record_click(ack, body, say):
     with app.app_context():
@@ -180,9 +176,9 @@ def approve_request(ack, body, say):
 
         #user = User.query.filter_by(slack_user_id=slack_user_id).first()
         #user = add_user(slack_user_id, slack_username, initial_uv)
-        print(user_exists(slack_user_id))
+        user = User.query.filter_by(slack_user_id=slack_user_id).first()
 
-        if not user_exists(slack_user_id):
+        if user is None:
             initial_uv = get_initial_user_vector()
             user = add_user(slack_user_id, slack_username, initial_uv)
 
