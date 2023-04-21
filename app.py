@@ -102,9 +102,8 @@ def add_article(document, article_external_id ="", query = ""):
     return (article.serialize)
 
 
-def update_user(slack_user_id, slack_user_name, user_vector):
+def update_user(slack_user_id, user_vector):
     user = User.query.filter_by(slack_user_id=slack_user_id).first()
-    user.slack_user_name = slack_user_name
     user.user_vector = user_vector.tobytes()
     db.session.commit()
     return (user.serialize)
@@ -119,13 +118,15 @@ def record_click(ack, body, say):
 
         user = User.query.filter_by(slack_user_id=slack_user_id).first()
         article_no_clicked = body['actions'][0]['value']
-        print(article_no_clicked)
-        Article.query.filter_by(id=article_no_clicked).first()
-        article = Article.query.get(int(article_no_clicked)).first()
-        print(article.serialize)
+        
+        article = db.session.query(Article).filter(Article.id==10).first()
+        article = article.serialize
         user = user.serialize
         user_vector = (list(user['user_vector']))
-        #updated_user_vector = update_user_vector_cosine_similarity(user_vector)
+        print(user_vector)
+        updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
+        a = update_user(slack_user_id, updated_user_vector)
+        print(a)
 
 @ app.route('/category', methods=['POST'])
 def events():
@@ -330,3 +331,4 @@ def store_user_profile():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
+
