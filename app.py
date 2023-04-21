@@ -30,8 +30,11 @@ bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
 
 
 @bolt_app.command("/happynews")
-def help_command(say, ack):
+def help_command(client, ack, body):
     ack()
+    channel_id = body['channel_id']
+    slack_user_id = body['user_id']
+
     text = {
         "blocks": [
             {
@@ -93,7 +96,11 @@ def help_command(say, ack):
             },
         ]
     }
-    say(text=text)
+    client.chat_postEphemeral(
+        channel=channel_id,
+        user=slack_user_id,
+        blocks=text["blocks"]
+    )
 
 def add_user(slack_user_id, user_vector):
     np.save(os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}'), user_vector)
@@ -177,16 +184,22 @@ def events():
 
 
 @bolt_app.action(re.compile("(category)"))
-def approve_request(ack, body, say):
+def approve_request(client, ack, body, say):
     with app.app_context():
         # Acknowledge action request
         ack()
+        channel = body['channel']
+        channel_id = channel['id']
         user = body['user']
         category = body['actions'][0]['value']
         slack_user_id = user['id']
         slack_username = user['username']
 
-        say(text=" Processing.............")
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=slack_user_id,
+            text="Processing............."
+        )
 
         user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
@@ -278,7 +291,11 @@ def approve_request(ack, body, say):
         text = {
             "blocks": blocks
         }
-        say(text=text)
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=slack_user_id,
+            blocks=blocks
+        )
 
 
 handler = SlackRequestHandler(bolt_app)
