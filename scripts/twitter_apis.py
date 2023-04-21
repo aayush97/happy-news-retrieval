@@ -3,6 +3,8 @@ import json
 import pandas as pd
 import numpy as np
 import os
+import json
+from flask import Flask, request, jsonify
 
 # Set the path to your credentials JSON file:
 credentials = "twitter_creds.json"
@@ -22,18 +24,20 @@ ACCESS_SECRET = api_tokens["access_secret"]
 auth = tweepy.OAuth2BearerHandler(BEARER_TOKEN)
 api = tweepy.API(auth)
 
+categories = ["puppies", "cats", "nature", "sports"]
 
 # Function to extract tweets
 def get_tweets(query, limit=100, type="mixed"):
 
     happy_terms = ["happy", "win", "heartwarming", "positive", "inspiring",
-                   "feel-good", "uplifting", "positive", "cute", "adorable", ]
+                   "feel-good", "uplifting", "positive", "cute", "adorable"]
     negative_terms = ["loss", "lose", "negative", "sad"]
     if query == 'Any':
-        query = ""
+        query = "( " +  " OR ".join(categories) + " )"
 
-    expanded_query = "(" + " OR ".join(happy_terms) + ") -(" + \
-        " OR ".join(negative_terms) + ") -filter:retweets " + query
+    expanded_query = "(" + " OR ".join(happy_terms) + ") - (" + \
+        " OR ".join(negative_terms) + ") " + query  + " -filter:retweets"
+  
     tweets = tweepy.Cursor(api.search_tweets,
                            q=expanded_query,
                            tweet_mode='extended',
@@ -121,5 +125,5 @@ def get_tweets_user(user, query, limit=5000):
 
 # Driver code
 if __name__ == '__main__':
-    get_tweets("football")
+    get_tweets("Any")
     # get_tweets_user("goodnewsnetwork", "#covid19")
