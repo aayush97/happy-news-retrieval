@@ -131,3 +131,5 @@ dmypy.json
 .DS_Store
 twitter_creds.json
 *.csv
+
+user_vectors/

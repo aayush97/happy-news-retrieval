@@ -87,12 +87,9 @@ def help_command(say, ack):
     }
     say(text=text)
 
-def add_user(slack_user_id, slack_user_name, user_vector):
-    user = User(slack_user_id=slack_user_id,
-                slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
-    db.session.add(user)
-    db.session.commit()
-    return user
+def add_user(slack_user_id, user_vector):
+    np.save(os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}'), user_vector)
+    return user_vector
 
 def add_article(document, article_external_id ="", query = ""):
     article = Article(document=document,
@@ -178,15 +175,14 @@ def approve_request(ack, body, say):
         category = body['actions'][0]['value']
         slack_user_id = user['id']
         slack_username = user['username']
+        user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
-        user = User.query.filter_by(slack_user_id=slack_user_id).first()
-        if user is None:
+        if os.path.isfile(user_vector_file):
+            user_vector = np.load(user_vector_file)
+        else:
             print(f'{slack_username} didnt exist. Creating user...')
             initial_uv = get_initial_user_vector()
-            user = add_user(slack_user_id, slack_username, initial_uv)
-
-        user = user.serialize
-        user_vector = np.frombuffer(user['user_vector'])
+            user_vector = add_user(slack_user_id, initial_uv)
 
         tweet_data = get_tweets(category)
 
@@ -321,7 +317,6 @@ json:
     parameters: user_id, tweet_id, query
 @returns "Success"
 """
-
 
 @ app.route("/click", methods=["POST"])
 def store_user_profile():
