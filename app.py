@@ -119,6 +119,9 @@ def record_click(ack, body, say):
         
         article = db.session.query(Article).filter(Article.id==article_no_clicked).first()
         article = article.serialize
+
+        print(f'Updating user vector {slack_username}')
+
         updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
         add_user(slack_user_id, updated_user_vector)
 
@@ -173,6 +176,9 @@ def approve_request(ack, body, say):
         category = body['actions'][0]['value']
         slack_user_id = user['id']
         slack_username = user['username']
+
+        say(text="Processing.............")
+
         user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
         if os.path.isfile(user_vector_file):
