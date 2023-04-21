@@ -119,14 +119,13 @@ def record_click(ack, body, say):
         user = User.query.filter_by(slack_user_id=slack_user_id).first()
         article_no_clicked = body['actions'][0]['value']
         
-        article = db.session.query(Article).filter(Article.id==10).first()
+        article = db.session.query(Article).filter(Article.id==article_no_clicked).first()
         article = article.serialize
         user = user.serialize
-        user_vector = (list(user['user_vector']))
-        print(user_vector)
+        user_vector = (np.frombuffer(user['user_vector'], dtype='>f4'))
+
         updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
-        a = update_user(slack_user_id, updated_user_vector)
-        print(a)
+        update_user(slack_user_id, updated_user_vector)
 
 @ app.route('/category', methods=['POST'])
 def events():
