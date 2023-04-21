@@ -79,7 +79,16 @@ def help_command(say, ack):
                                 },
                                 "value": "Puppies",
                                 "action_id": "category_puppies"
-                            }
+                            },
+                            {
+                                "type": "button",
+                                "text": {
+                                        "type": "plain_text",
+                                        "text": "Nature"
+                                },
+                                "value": "Nature",
+                                "action_id": "category_nature"
+                            },
                         ]
             },
         ]
@@ -177,7 +186,7 @@ def approve_request(ack, body, say):
         slack_user_id = user['id']
         slack_username = user['username']
 
-        say(text="Processing.............")
+        say(text=" Processing.............")
 
         user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
