@@ -14,6 +14,9 @@ from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
 from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors
 
+categories = ["sports", "nature", "puppies", "cats"]
+    
+    
 # database setup
 app = Flask(__name__)
 
@@ -161,12 +164,21 @@ def events():
     tweet_data = tweet_data[:5]
 
     # News
-    news_data = get_news(category)
-    news_data = news_data['articles']
-
     news_texts = []
-    for i in news_data:
-        news_texts.append(i["description"])
+
+    if category == "Any":
+        for item in categories:
+            news_data = get_news(item, 5)
+            news_data = news_data['articles']
+
+            for i in news_data:
+                news_texts.append(i["description"])
+    else:
+        news_data = get_news(category, 20)
+        news_data = news_data['articles']
+
+        for i in news_data:
+            news_texts.append(i["description"])
 
     goodness_score = get_goodness_score(news_texts)
 
@@ -225,12 +237,21 @@ def approve_request(client, ack, body, say):
         tweet_data = tweet_data[:10]
 
         # News
-        news_data = get_news(category)
-        news_data = news_data['articles']
-
         news_texts = []
-        for i in news_data:
-            news_texts.append(i["description"])
+
+        if category == "Any":
+            for item in categories:
+                news_data = get_news(item, 5)
+                news_data = news_data['articles']
+                
+                for i in news_data:
+                    news_texts.append(i["description"])
+        else:
+            news_data = get_news(category, 20)
+            news_data = news_data['articles']
+
+            for i in news_data:
+                news_texts.append(i["description"])
 
         goodness_score = get_goodness_score(news_texts)
 
