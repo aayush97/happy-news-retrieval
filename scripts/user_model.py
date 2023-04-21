@@ -47,4 +47,4 @@ def update_user_vector_cosine_similarity(user_vector, tweet, clicked=1, step_siz
 def get_similarity_between_user_doc_vectors(user_vector, document):
     doc_vector = text2vec(document)
     score = np.dot(user_vector, doc_vector.T) / (norm(user_vector) * norm(doc_vector))
-    return score
+    return score[0][0]

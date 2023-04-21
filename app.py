@@ -10,7 +10,6 @@ from scripts.twitter_apis import get_tweets
 from scripts.sentiment import get_goodness_score
 from scripts.news_basic import get_news
 import numpy as np
-import io
 from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
 from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors
@@ -113,16 +112,15 @@ def record_click(ack, body, say):
         slack_user_id = user['id']
         slack_username = user['username']
 
-        user = User.query.filter_by(slack_user_id=slack_user_id).first()
+        user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
+        user_vector = np.load(user_vector_file)
+
         article_no_clicked = body['actions'][0]['value']
         
         article = db.session.query(Article).filter(Article.id==article_no_clicked).first()
         article = article.serialize
-        user = user.serialize
-        user_vector = (np.frombuffer(user['user_vector'], dtype='>f4'))
-
         updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
-        update_user(slack_user_id, updated_user_vector)
+        add_user(slack_user_id, updated_user_vector)
 
 @ app.route('/category', methods=['POST'])
 def events():
@@ -219,10 +217,13 @@ def approve_request(ack, body, say):
         total_data = tweet_data + news_data
         #total_data = np.random.choice(total_data, size=5, replace=False)
 
+        #Calculate user doc sim score
         for article in total_data:
             score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
-            print(score)
             article["user_doc_sim_score"] = score
+
+        total_data = sorted(total_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
+        total_data = total_data[:5]
 
         for article in total_data:
             article_db = add_article(article["description"])
