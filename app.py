@@ -13,7 +13,7 @@ import numpy as np
 import io
 from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
-from scripts.user_model import update_user_vector_cosine_similarity
+from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors
 
 # database setup
 app = Flask(__name__)
@@ -92,7 +92,7 @@ def add_user(slack_user_id, slack_user_name, user_vector):
                 slack_user_name=slack_user_name, user_vector=user_vector.tobytes())
     db.session.add(user)
     db.session.commit()
-    return (user.serialize)
+    return user
 
 def add_article(document, article_external_id ="", query = ""):
     article = Article(document=document,
@@ -185,6 +185,9 @@ def approve_request(ack, body, say):
             initial_uv = get_initial_user_vector()
             user = add_user(slack_user_id, slack_username, initial_uv)
 
+        user = user.serialize
+        user_vector = np.frombuffer(user['user_vector'])
+
         tweet_data = get_tweets(category)
 
         # Twitter
@@ -199,7 +202,7 @@ def approve_request(ack, body, say):
 
         tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
 
-        tweet_data = tweet_data[:5]
+        tweet_data = tweet_data[:10]
 
         # News
         news_data = get_news(category)
@@ -215,10 +218,15 @@ def approve_request(ack, body, say):
             data_row["score"] = goodness_score[idx]
 
         news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-        news_data = news_data[:5]
+        news_data = news_data[:10]
 
         total_data = tweet_data + news_data
-        total_data = np.random.choice(total_data, size=5, replace=False)
+        #total_data = np.random.choice(total_data, size=5, replace=False)
+
+        for article in total_data:
+            score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
+            print(score)
+            article["user_doc_sim_score"] = score
 
         for article in total_data:
             article_db = add_article(article["description"])
