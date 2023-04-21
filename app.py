@@ -28,6 +28,65 @@ db.init_app(app)
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
 
+category_blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Choose your category"
+            }
+        },
+        {
+            "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Any"
+                            },
+                            "value": "Any",
+                            "action_id": "category_any"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Sports"
+                            },
+                            "value": "Sports",
+                            "action_id": "category_sports"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Cats"
+                            },
+                            "value": "Cats",
+                            "action_id": "category_layoffs"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Puppies"
+                            },
+                            "value": "Puppies",
+                            "action_id": "category_puppies"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Nature"
+                            },
+                            "value": "Nature",
+                            "action_id": "category_nature"
+                        },
+                    ]
+        },
+]
 
 @bolt_app.command("/happynews")
 def help_command(client, ack, body):
@@ -35,71 +94,10 @@ def help_command(client, ack, body):
     channel_id = body['channel_id']
     slack_user_id = body['user_id']
 
-    text = {
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Choose your category"
-                }
-            },
-            {
-                "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Any"
-                                },
-                                "value": "Any",
-                                "action_id": "category_any"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Sports"
-                                },
-                                "value": "Sports",
-                                "action_id": "category_sports"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Cats"
-                                },
-                                "value": "Cats",
-                                "action_id": "category_layoffs"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Puppies"
-                                },
-                                "value": "Puppies",
-                                "action_id": "category_puppies"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Nature"
-                                },
-                                "value": "Nature",
-                                "action_id": "category_nature"
-                            },
-                        ]
-            },
-        ]
-    }
     client.chat_postEphemeral(
         channel=channel_id,
         user=slack_user_id,
-        blocks=text["blocks"]
+        blocks=category_blocks
     )
 
 def add_user(slack_user_id, user_vector):
@@ -288,9 +286,9 @@ def approve_request(client, ack, body, say):
                 "type": "divider"
             })
 
-        text = {
-            "blocks": blocks
-        }
+        for i in category_blocks:
+            blocks.append(i)
+
         client.chat_postEphemeral(
             channel=channel_id,
             user=slack_user_id,
