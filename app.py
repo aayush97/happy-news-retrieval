@@ -205,6 +205,8 @@ def approve_request(client, ack, body, say):
         slack_user_id = user['id']
         slack_username = user['username']
 
+        print(f'{slack_username} clicked on {category}')
+
         client.chat_postEphemeral(
             channel=channel_id,
             user=slack_user_id,
@@ -281,7 +283,7 @@ def approve_request(client, ack, body, say):
             "type": "section",
             "text": {
                     "type": "mrkdwn",
-                "text": "*"+category+"*"
+                "text": "<<<<<<<<<<*"+category+"*>>>>>>>>>>>>>"
             }
         })
 
@@ -326,7 +328,7 @@ def slack_events():
     return handler.handle(request)
 
 
-@ app.route("/", methods=["POST"])
+@ app.route("/", methods=["GET", "POST"])
 def test_endpoint():
     return "Hi"
 
