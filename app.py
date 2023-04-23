@@ -14,6 +14,9 @@ from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
 from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors
 
+categories = ["sports", "nature", "puppies", "cats"]
+    
+    
 # database setup
 app = Flask(__name__)
 
@@ -28,72 +31,77 @@ db.init_app(app)
 bolt_app = App(token=os.environ.get("SLACK_BOT_TOKEN"),
                signing_secret=os.environ.get("SLACK_SIGNING_SECRET"))
 
+category_blocks = [
+        {
+            "type": "section",
+            "text": {
+                "type": "mrkdwn",
+                "text": "Choose your category"
+            }
+        },
+        {
+            "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Any"
+                            },
+                            "value": "Any",
+                            "action_id": "category_any"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Sports"
+                            },
+                            "value": "Sports",
+                            "action_id": "category_sports"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Cats"
+                            },
+                            "value": "Cats",
+                            "action_id": "category_layoffs"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Puppies"
+                            },
+                            "value": "Puppies",
+                            "action_id": "category_puppies"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                    "type": "plain_text",
+                                    "text": "Nature"
+                            },
+                            "value": "Nature",
+                            "action_id": "category_nature"
+                        },
+                    ]
+        },
+]
 
 @bolt_app.command("/happynews")
-def help_command(say, ack):
+def help_command(client, ack, body):
     ack()
-    text = {
-        "blocks": [
-            {
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "Choose your category"
-                }
-            },
-            {
-                "type": "actions",
-                        "elements": [
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Any"
-                                },
-                                "value": "Any",
-                                "action_id": "category_any"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Sports"
-                                },
-                                "value": "Sports",
-                                "action_id": "category_sports"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Cats"
-                                },
-                                "value": "Cats",
-                                "action_id": "category_layoffs"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Puppies"
-                                },
-                                "value": "Puppies",
-                                "action_id": "category_puppies"
-                            },
-                            {
-                                "type": "button",
-                                "text": {
-                                        "type": "plain_text",
-                                        "text": "Nature"
-                                },
-                                "value": "Nature",
-                                "action_id": "category_nature"
-                            },
-                        ]
-            },
-        ]
-    }
-    say(text=text)
+    channel_id = body['channel_id']
+    slack_user_id = body['user_id']
+
+    client.chat_postEphemeral(
+        channel=channel_id,
+        user=slack_user_id,
+        blocks=category_blocks
+    )
 
 def add_user(slack_user_id, user_vector):
     np.save(os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}'), user_vector)
@@ -156,12 +164,21 @@ def events():
     tweet_data = tweet_data[:5]
 
     # News
-    news_data = get_news(category)
-    news_data = news_data['articles']
-
     news_texts = []
-    for i in news_data:
-        news_texts.append(i["description"])
+
+    if category == "Any":
+        for item in categories:
+            news_data = get_news(item, 5)
+            news_data = news_data['articles']
+
+            for i in news_data:
+                news_texts.append(i["description"])
+    else:
+        news_data = get_news(category, 20)
+        news_data = news_data['articles']
+
+        for i in news_data:
+            news_texts.append(i["description"])
 
     goodness_score = get_goodness_score(news_texts)
 
@@ -177,16 +194,24 @@ def events():
 
 
 @bolt_app.action(re.compile("(category)"))
-def approve_request(ack, body, say):
+def approve_request(client, ack, body, say):
     with app.app_context():
         # Acknowledge action request
         ack()
+        channel = body['channel']
+        channel_id = channel['id']
         user = body['user']
         category = body['actions'][0]['value']
         slack_user_id = user['id']
         slack_username = user['username']
 
-        say(text=" Processing.............")
+        print(f'{slack_username} clicked on {category}')
+
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=slack_user_id,
+            text="Processing............."
+        )
 
         user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
@@ -214,12 +239,21 @@ def approve_request(ack, body, say):
         tweet_data = tweet_data[:10]
 
         # News
-        news_data = get_news(category)
-        news_data = news_data['articles']
-
         news_texts = []
-        for i in news_data:
-            news_texts.append(i["description"])
+
+        if category == "Any":
+            for item in categories:
+                news_data = get_news(item, 5)
+                news_data = news_data['articles']
+                
+                for i in news_data:
+                    news_texts.append(i["description"])
+        else:
+            news_data = get_news(category, 20)
+            news_data = news_data['articles']
+
+            for i in news_data:
+                news_texts.append(i["description"])
 
         goodness_score = get_goodness_score(news_texts)
 
@@ -249,7 +283,7 @@ def approve_request(ack, body, say):
             "type": "section",
             "text": {
                     "type": "mrkdwn",
-                "text": "*"+category+"*"
+                "text": "<<<<<<<<<<*"+category+"*>>>>>>>>>>>>>"
             }
         })
 
@@ -275,10 +309,14 @@ def approve_request(ack, body, say):
                 "type": "divider"
             })
 
-        text = {
-            "blocks": blocks
-        }
-        say(text=text)
+        for i in category_blocks:
+            blocks.append(i)
+
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=slack_user_id,
+            blocks=blocks
+        )
 
 
 handler = SlackRequestHandler(bolt_app)
@@ -290,7 +328,7 @@ def slack_events():
     return handler.handle(request)
 
 
-@ app.route("/", methods=["POST"])
+@ app.route("/", methods=["GET", "POST"])
 def test_endpoint():
     return "Hi"
 
@@ -348,5 +386,5 @@ def store_user_profile():
     return "Success", 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 
