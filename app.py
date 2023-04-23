@@ -210,7 +210,7 @@ def approve_request(client, ack, body, say):
         client.chat_postEphemeral(
             channel=channel_id,
             user=slack_user_id,
-            text="Processing............."
+            text= " Processing............. "
         )
 
         user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
@@ -386,5 +386,6 @@ def store_user_profile():
     return "Success", 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=os.environ.get("PORT") or 5000, debug=True)
 
+#http://165.227.139.80
