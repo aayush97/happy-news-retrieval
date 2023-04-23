@@ -133,3 +133,4 @@ twitter_creds.json
 *.csv
 
 user_vectors/
+models/
