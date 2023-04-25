@@ -244,6 +244,12 @@ def add_article(document, article_external_id ="", query = ""):
     db.session.commit()
     return (article.serialize)
 
+def add_user_click(slack_user_id, slack_username, document_id):
+    interaction = UserInteraction(slack_user_id=slack_user_id,
+                      slack_user_name=slack_username, article_id=document_id)
+    db.session.add(interaction)
+    db.session.commit()
+    return (interaction.serialize)
 
 def update_user(slack_user_id, user_vector):
     user = User.query.filter_by(slack_user_id=slack_user_id).first()
@@ -271,6 +277,7 @@ def record_click(ack, body, say):
 
         updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
         add_user(slack_user_id, updated_user_vector)
+        add_user_click(slack_user_id, slack_username, article_no_clicked)
 
 @ app.route('/category', methods=['POST'])
 def events():
