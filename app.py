@@ -168,7 +168,6 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             blocks = []
             blocks.append({
                 "type": "actions",
-                "block_id": "selected_category",
                 "elements": [
                     {
                         "type": "button",
@@ -176,7 +175,8 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                             "type": "plain_text",
                             "text": category
                         },
-                        "style": "danger"
+                        "style": "danger",
+                        "action_id": "do_nothing"
                     }
                 ]
             })
@@ -287,10 +287,9 @@ def record_click(ack, body, say):
         print(add_user_click(slack_user_id, slack_username, article_no_clicked))
 
 
-@bolt_app.action("selected_category")
+@bolt_app.action("do_nothing")
 def title(ack):
     ack()
-
 
 
 @ app.route('/category', methods=['POST'])
