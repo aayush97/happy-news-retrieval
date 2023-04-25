@@ -46,7 +46,7 @@ category_blocks = [
                             "type": "button",
                             "text": {
                                     "type": "plain_text",
-                                    "text": "Any"
+                                    "text": "Recommended for you"
                             },
                             "value": "Any",
                             "action_id": "category_any"
