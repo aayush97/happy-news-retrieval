@@ -286,6 +286,13 @@ def record_click(ack, body, say):
         add_user(slack_user_id, updated_user_vector)
         print(add_user_click(slack_user_id, slack_username, article_no_clicked))
 
+
+@bolt_app.action("selected_category")
+def title(ack):
+    ack()
+
+
+
 @ app.route('/category', methods=['POST'])
 def events():
     request_data = request.get_json()
