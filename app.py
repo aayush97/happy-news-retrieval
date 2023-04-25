@@ -97,7 +97,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             client.chat_postEphemeral(
                 channel=channel_id,
                 user=slack_user_id,
-                text= " Processing............. "
+                text= " Processing :dog: "
             )
 
             user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
