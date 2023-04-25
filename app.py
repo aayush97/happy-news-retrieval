@@ -165,6 +165,11 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 article_db = add_article(article["description"])
                 article["db_id"] = article_db["id"]
 
+            heading = category
+
+            if heading == "Any":
+                heading = "Recommended for you"
+
             blocks = []
             blocks.append({
                 "type": "actions",
