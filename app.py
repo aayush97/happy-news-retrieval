@@ -167,11 +167,18 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
 
             blocks = []
             blocks.append({
-                "type": "section",
-                "text": {
-                        "type": "mrkdwn",
-                    "text": "<<<<<<<<<<*"+category+"*>>>>>>>>>>>>>"
-                }
+                "type": "actions",
+                "block_id": "selected_category",
+                "elements": [
+                    {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Category"
+                        },
+                        "style": "danger"
+                    }
+                ]
             })
 
             for idx, data in enumerate(total_data):
