@@ -210,113 +210,123 @@ def approve_request(client, ack, body, say):
         client.chat_postEphemeral(
             channel=channel_id,
             user=slack_user_id,
-            text="Processing............."
+            text= " Processing............. "
         )
 
-        user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
+        try:
+            user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
-        if os.path.isfile(user_vector_file):
-            user_vector = np.load(user_vector_file)
-        else:
-            print(f'{slack_username} didnt exist. Creating user...')
-            initial_uv = get_initial_user_vector()
-            user_vector = add_user(slack_user_id, initial_uv)
+            if os.path.isfile(user_vector_file):
+                user_vector = np.load(user_vector_file)
+            else:
+                print(f'{slack_username} didnt exist. Creating user...')
+                initial_uv = get_initial_user_vector()
+                user_vector = add_user(slack_user_id, initial_uv)
 
-        tweet_data = get_tweets(category)
+            tweet_data = get_tweets(category)
 
-        # Twitter
-        tweet_texts = []
-        for i in tweet_data:
-            tweet_texts.append(i["description"])
+            # Twitter
+            tweet_texts = []
+            for i in tweet_data:
+                tweet_texts.append(i["description"])
 
-        goodness_score = get_goodness_score(tweet_texts)
+            goodness_score = get_goodness_score(tweet_texts)
 
-        for idx, data_row in enumerate(tweet_data):
-            data_row["score"] = (goodness_score[idx])
+            for idx, data_row in enumerate(tweet_data):
+                data_row["score"] = (goodness_score[idx])
 
-        tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
+            tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
 
-        tweet_data = tweet_data[:10]
+            tweet_data = tweet_data[:10]
 
-        # News
-        news_texts = []
+            # News
+            news_texts = []
 
-        if category == "Any":
-            for item in categories:
-                news_data = get_news(item, 5)
+            if category == "Any":
+                for item in categories:
+                    news_data = get_news(item, 5)
+                    news_data = news_data['articles']
+                    
+                    for i in news_data:
+                        news_texts.append(i["description"])
+            else:
+                news_data = get_news(category, 20)
                 news_data = news_data['articles']
-                
+
                 for i in news_data:
                     news_texts.append(i["description"])
-        else:
-            news_data = get_news(category, 20)
-            news_data = news_data['articles']
 
-            for i in news_data:
-                news_texts.append(i["description"])
+            goodness_score = get_goodness_score(news_texts)
 
-        goodness_score = get_goodness_score(news_texts)
+            for idx, data_row in enumerate(news_data):
+                data_row["score"] = goodness_score[idx]
 
-        for idx, data_row in enumerate(news_data):
-            data_row["score"] = goodness_score[idx]
+            news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+            news_data = news_data[:10]
 
-        news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-        news_data = news_data[:10]
+            total_data = tweet_data + news_data
+            #total_data = np.random.choice(total_data, size=5, replace=False)
 
-        total_data = tweet_data + news_data
-        #total_data = np.random.choice(total_data, size=5, replace=False)
+            #Calculate user doc sim score
+            for article in total_data:
+                score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
+                article["user_doc_sim_score"] = score
 
-        #Calculate user doc sim score
-        for article in total_data:
-            score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
-            article["user_doc_sim_score"] = score
+            total_data = sorted(total_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
+            total_data = total_data[:5]
 
-        total_data = sorted(total_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
-        total_data = total_data[:5]
+            for article in total_data:
+                article_db = add_article(article["description"])
+                article["db_id"] = article_db["id"]
 
-        for article in total_data:
-            article_db = add_article(article["description"])
-            article["db_id"] = article_db["id"]
-
-        blocks = []
-        blocks.append({
-            "type": "section",
-            "text": {
-                    "type": "mrkdwn",
-                "text": "<<<<<<<<<<*"+category+"*>>>>>>>>>>>>>"
-            }
-        })
-
-        for idx, data in enumerate(total_data):
+            blocks = []
             blocks.append({
                 "type": "section",
                 "text": {
-                    "type": "mrkdwn",
-                    "text": data["description"]
-                },
-                "accessory": {
-                    "type": "button",
-                    "text": {
-                        "type": "plain_text",
-                        "text": "Link to article"
-                    },
-                    "value": str(data["db_id"]),
-                    "url": data["url"],
-                    "action_id": "click_feedback"
+                        "type": "mrkdwn",
+                    "text": "<<<<<<<<<<*"+category+"*>>>>>>>>>>>>>"
                 }
             })
-            blocks.append({
-                "type": "divider"
-            })
 
-        for i in category_blocks:
-            blocks.append(i)
+            for idx, data in enumerate(total_data):
+                blocks.append({
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": data["description"]
+                    },
+                    "accessory": {
+                        "type": "button",
+                        "text": {
+                            "type": "plain_text",
+                            "text": "Link to article"
+                        },
+                        "value": str(data["db_id"]),
+                        "url": data["url"],
+                        "action_id": "click_feedback"
+                    }
+                })
+                blocks.append({
+                    "type": "divider"
+                })
 
-        client.chat_postEphemeral(
-            channel=channel_id,
-            user=slack_user_id,
-            blocks=blocks
-        )
+            for i in category_blocks:
+                blocks.append(i)
+
+            client.chat_postEphemeral(
+                channel=channel_id,
+                user=slack_user_id,
+                blocks=blocks
+            )
+        except Exception as e:
+            text = "Something went wrong. Please try again"
+            client.chat_postEphemeral(
+                channel=channel_id,
+                user=slack_user_id,
+                text=text
+            )
+            print("ERROR")
+            print(e)
 
 
 handler = SlackRequestHandler(bolt_app)
@@ -386,5 +396,6 @@ def store_user_profile():
     return "Success", 200
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=os.environ.get("PORT") or 5000, debug=True)
 
+#http://165.227.139.80

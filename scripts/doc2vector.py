@@ -1,9 +1,10 @@
 from transformers import RobertaTokenizer, AutoModelForSequenceClassification
 import torch
+import os
 
-tokenizer = RobertaTokenizer.from_pretrained("models/checkpoint-428")
+tokenizer = RobertaTokenizer.from_pretrained(os.path.join(os.getcwd(), "models/checkpoint-428"))
 text_model = AutoModelForSequenceClassification.from_pretrained(
-    "models/checkpoint-428")
+    os.path.join(os.getcwd(), "models/checkpoint-428"))
 text_model.eval()
 # vision_model = Data2VecVisionModel.from_pretrained("facebook/data2vec-vision-base")
 # audio_model = Data2VecAudioModel.from_pretrained("facebook/data2vec-audio-base")
