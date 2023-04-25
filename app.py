@@ -91,129 +91,15 @@ category_blocks = [
         },
 ]
 
-@bolt_app.command("/happynews")
-def help_command(client, ack, body):
-    ack()
-    channel_id = body['channel_id']
-    slack_user_id = body['user_id']
-
-    client.chat_postEphemeral(
-        channel=channel_id,
-        user=slack_user_id,
-        blocks=category_blocks
-    )
-
-def add_user(slack_user_id, user_vector):
-    np.save(os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}'), user_vector)
-    return user_vector
-
-def add_article(document, article_external_id ="", query = ""):
-    article = Article(document=document,
-                      article_external_id=article_external_id, query=query)
-    db.session.add(article)
-    db.session.commit()
-    return (article.serialize)
-
-
-def update_user(slack_user_id, user_vector):
-    user = User.query.filter_by(slack_user_id=slack_user_id).first()
-    user.user_vector = user_vector.tobytes()
-    db.session.commit()
-    return (user.serialize)
-
-@bolt_app.action("click_feedback")
-def record_click(ack, body, say):
+def provide_recommendations(client, channel_id, slack_user_id, slack_username, category):
     with app.app_context():
-        ack()
-        user = body['user']
-        slack_user_id = user['id']
-        slack_username = user['username']
-
-        user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
-        user_vector = np.load(user_vector_file)
-
-        article_no_clicked = body['actions'][0]['value']
-        
-        article = db.session.query(Article).filter(Article.id==article_no_clicked).first()
-        article = article.serialize
-
-        print(f'Updating user vector {slack_username}')
-
-        updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
-        add_user(slack_user_id, updated_user_vector)
-
-@ app.route('/category', methods=['POST'])
-def events():
-    request_data = request.get_json()
-    # user = body['user']
-    # category = body['actions'][0]['value']
-    category = request_data['action']
-    tweet_data = get_tweets(category)
-
-    # Twitter
-    tweet_texts = []
-    for i in tweet_data:
-        tweet_texts.append(i["description"])
-
-    goodness_score = get_goodness_score(tweet_texts)
-    for idx, data_row in enumerate(tweet_data):
-        data_row["score"] = (goodness_score[idx])
-
-    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
-
-    tweet_data = tweet_data[:5]
-
-    # News
-    news_texts = []
-
-    if category == "Any":
-        for item in categories:
-            news_data = get_news(item, 5)
-            news_data = news_data['articles']
-
-            for i in news_data:
-                news_texts.append(i["description"])
-    else:
-        news_data = get_news(category, 20)
-        news_data = news_data['articles']
-
-        for i in news_data:
-            news_texts.append(i["description"])
-
-    goodness_score = get_goodness_score(news_texts)
-
-    for idx, data_row in enumerate(news_data):
-        data_row["score"] = goodness_score[idx]
-
-    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-    news_data = news_data[:5]
-
-    total_data = tweet_data + news_data
-    total_data = np.random.choice(total_data, size=5, replace=False)
-    return jsonify(total_data.tolist())
-
-
-@bolt_app.action(re.compile("(category)"))
-def approve_request(client, ack, body, say):
-    with app.app_context():
-        # Acknowledge action request
-        ack()
-        channel = body['channel']
-        channel_id = channel['id']
-        user = body['user']
-        category = body['actions'][0]['value']
-        slack_user_id = user['id']
-        slack_username = user['username']
-
-        print(f'{slack_username} clicked on {category}')
-
-        client.chat_postEphemeral(
-            channel=channel_id,
-            user=slack_user_id,
-            text= " Processing............. "
-        )
-
         try:
+            client.chat_postEphemeral(
+                channel=channel_id,
+                user=slack_user_id,
+                text= " Processing............. "
+            )
+
             user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
 
             if os.path.isfile(user_vector_file):
@@ -327,6 +213,128 @@ def approve_request(client, ack, body, say):
             )
             print("ERROR")
             print(e)
+
+@bolt_app.command("/happynews")
+def help_command(client, ack, body):
+    ack()
+    channel_id = body['channel_id']
+    slack_user_id = body['user_id']
+    slack_username = body['user_name']
+
+    user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
+
+    if not os.path.isfile(user_vector_file):
+        client.chat_postEphemeral(
+            channel=channel_id,
+            user=slack_user_id,
+            blocks=category_blocks
+        )
+    else:
+        provide_recommendations(client, channel_id, slack_user_id, slack_username, 'Any')
+
+
+def add_user(slack_user_id, user_vector):
+    np.save(os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}'), user_vector)
+    return user_vector
+
+def add_article(document, article_external_id ="", query = ""):
+    article = Article(document=document,
+                      article_external_id=article_external_id, query=query)
+    db.session.add(article)
+    db.session.commit()
+    return (article.serialize)
+
+
+def update_user(slack_user_id, user_vector):
+    user = User.query.filter_by(slack_user_id=slack_user_id).first()
+    user.user_vector = user_vector.tobytes()
+    db.session.commit()
+    return (user.serialize)
+
+@bolt_app.action("click_feedback")
+def record_click(ack, body, say):
+    with app.app_context():
+        ack()
+        user = body['user']
+        slack_user_id = user['id']
+        slack_username = user['username']
+
+        user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
+        user_vector = np.load(user_vector_file)
+
+        article_no_clicked = body['actions'][0]['value']
+        
+        article = db.session.query(Article).filter(Article.id==article_no_clicked).first()
+        article = article.serialize
+
+        print(f'Updating user vector {slack_username}')
+
+        updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
+        add_user(slack_user_id, updated_user_vector)
+
+@ app.route('/category', methods=['POST'])
+def events():
+    request_data = request.get_json()
+    # user = body['user']
+    # category = body['actions'][0]['value']
+    category = request_data['action']
+    tweet_data = get_tweets(category)
+
+    # Twitter
+    tweet_texts = []
+    for i in tweet_data:
+        tweet_texts.append(i["description"])
+
+    goodness_score = get_goodness_score(tweet_texts)
+    for idx, data_row in enumerate(tweet_data):
+        data_row["score"] = (goodness_score[idx])
+
+    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
+
+    tweet_data = tweet_data[:5]
+
+    # News
+    news_texts = []
+
+    if category == "Any":
+        for item in categories:
+            news_data = get_news(item, 5)
+            news_data = news_data['articles']
+
+            for i in news_data:
+                news_texts.append(i["description"])
+    else:
+        news_data = get_news(category, 20)
+        news_data = news_data['articles']
+
+        for i in news_data:
+            news_texts.append(i["description"])
+
+    goodness_score = get_goodness_score(news_texts)
+
+    for idx, data_row in enumerate(news_data):
+        data_row["score"] = goodness_score[idx]
+
+    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+    news_data = news_data[:5]
+
+    total_data = tweet_data + news_data
+    total_data = np.random.choice(total_data, size=5, replace=False)
+    return jsonify(total_data.tolist())
+
+@bolt_app.action(re.compile("(category)"))
+def approve_request(client, ack, body, say):
+    # Acknowledge action request
+    ack()
+    channel = body['channel']
+    channel_id = channel['id']
+    user = body['user']
+    category = body['actions'][0]['value']
+    slack_user_id = user['id']
+    slack_username = user['username']
+
+    print(f'{slack_username} clicked on {category}')
+    provide_recommendations(client, channel_id, slack_user_id, slack_username, category)
 
 
 handler = SlackRequestHandler(bolt_app)
