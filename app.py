@@ -178,7 +178,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                         "type": "button",
                         "text": {
                             "type": "plain_text",
-                            "text": category
+                            "text": heading
                         },
                         "style": "danger",
                         "action_id": "do_nothing"
