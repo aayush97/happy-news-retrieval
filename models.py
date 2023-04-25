@@ -72,37 +72,26 @@ class UserInteraction(db.Model):
     __tablename__ = 'user_interactions'
 
     id = db.Column(db.Integer, primary_key=True)
-    user_clicked = db.Column(db.Boolean, nullable=False)
-    query = db.Column(db.String(100), nullable=False)
-    category = db.Column(db.String(100), nullable=False)
-    slack_user_id = db.Column(db.String(50), nullable=False)
-    slack_user_name = db.Column(db.String(100), nullable=False)
-    article_external_id = db.Column(db.String(50), nullable=False)
+    user_clicked = db.Column(db.Boolean, nullable=True)
+    query = db.Column(db.String(100), nullable=True)
+    category = db.Column(db.String(100), nullable=True)
+    slack_user_id = db.Column(db.String(50), nullable=True)
+    slack_user_name = db.Column(db.String(100), nullable=True)
+    article_external_id = db.Column(db.String(50), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     article_id = db.Column(db.Integer, db.ForeignKey('articles.id'))
 
 
-    def __init__(self, user_clicked, query, category, slack_user_id, slack_user_name, article_external_id, user_id, article_id):
-      self.user_clicked = user_clicked
-      self.query = query
-      self.category = category
+    def __init__(self, slack_user_id, slack_user_name, article_id):
       self.slack_user_id = slack_user_id
       self.slack_user_name = slack_user_name
-      self.article_external_id = article_external_id
-      self.user_id = user_id
       self.article_id = article_id
        
 
     @property
     def serialize(self):
       return {
-        'id': self.id,
-        'user_clicked': self.user_clicked,
-        'query': self.query,
-        'category': self.category,
-        'slack_user_id': self.article_user_id,
+        'slack_user_id': self.slack_user_id,
         'slack_user_name': self.slack_user_name,
-        'article_external_id': self.article_external_id,
-        'user_id': self.user_id,
         'article_id': self.article_id
       }

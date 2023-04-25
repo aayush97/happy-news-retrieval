@@ -277,7 +277,7 @@ def record_click(ack, body, say):
 
         updated_user_vector = update_user_vector_cosine_similarity(user_vector, article['document'])
         add_user(slack_user_id, updated_user_vector)
-        add_user_click(slack_user_id, slack_username, article_no_clicked)
+        print(add_user_click(slack_user_id, slack_username, article_no_clicked))
 
 @ app.route('/category', methods=['POST'])
 def events():
