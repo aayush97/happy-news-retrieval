@@ -82,11 +82,11 @@ class UserInteraction(db.Model):
     article_id = db.Column(db.Integer, db.ForeignKey('articles.id'))
 
 
-    def __init__(self, slack_user_id, slack_user_name, article_id):
+    def __init__(self, slack_user_id, slack_user_name, article_id, category='NOT_CHOSEN'):
       self.slack_user_id = slack_user_id
       self.slack_user_name = slack_user_name
       self.article_id = article_id
-       
+      self.category = category
 
     @property
     def serialize(self):

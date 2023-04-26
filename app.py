@@ -218,9 +218,11 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             )
 
             if not category == 'Any':
-                print(f"Updating {slack_username} vector with {category}")
+                print(f"Updating user vector {slack_username} for category {category}")
                 updated_user_vector = update_user_vector_category(user_vector, category)
                 add_user(slack_user_id, updated_user_vector)
+            
+            print(add_user_click(slack_user_id, slack_username, 1, category))
 
         except Exception as e:
             text = "Something went wrong. Please try again"
@@ -262,9 +264,9 @@ def add_article(document, article_external_id ="", query = ""):
     db.session.commit()
     return (article.serialize)
 
-def add_user_click(slack_user_id, slack_username, document_id):
+def add_user_click(slack_user_id, slack_username, document_id, category ='NOT_CHOSEN'):
     interaction = UserInteraction(slack_user_id=slack_user_id,
-                      slack_user_name=slack_username, article_id=document_id)
+                      slack_user_name=slack_username, article_id=document_id, category=category)
     db.session.add(interaction)
     db.session.commit()
     return (interaction.serialize)
@@ -366,7 +368,6 @@ def approve_request(client, ack, body, say):
 
     print(f'{slack_username} clicked on {category}')
     provide_recommendations(client, channel_id, slack_user_id, slack_username, category)
-
 
 handler = SlackRequestHandler(bolt_app)
 
