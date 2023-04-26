@@ -12,7 +12,7 @@ from scripts.news_basic import get_news
 import numpy as np
 from scripts.user_model import get_initial_user_vector
 from scripts.doc2vector import text2vec
-from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors
+from scripts.user_model import update_user_vector_cosine_similarity, get_similarity_between_user_doc_vectors, update_user_vector_category
 
 categories = ["sports", "nature", "puppies", "cats"]
     
@@ -216,6 +216,12 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 user=slack_user_id,
                 blocks=blocks
             )
+
+            if not category == 'Any':
+                print(f"Updating {slack_username} vector with {category}")
+                updated_user_vector = update_user_vector_category(user_vector, category)
+                add_user(slack_user_id, updated_user_vector)
+
         except Exception as e:
             text = "Something went wrong. Please try again"
             client.chat_postEphemeral(
