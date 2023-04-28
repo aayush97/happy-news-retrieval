@@ -130,13 +130,13 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
 
             if category == "Any":
                 for item in categories:
-                    news_data = get_news(item, 5)
+                    news_data = get_news(item, 10)
                     news_data = news_data['articles']
                     
                     for i in news_data:
                         news_texts.append(i["description"])
             else:
-                news_data = get_news(category, 20)
+                news_data = get_news(category, 50)
                 news_data = news_data['articles']
 
                 for i in news_data:
@@ -148,7 +148,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 data_row["score"] = goodness_score[idx]
 
             news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-            news_data = news_data[:10]
+            news_data = news_data[:20]
 
             total_data = tweet_data + news_data
             #total_data = np.random.choice(total_data, size=5, replace=False)
