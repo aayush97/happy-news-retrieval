@@ -113,10 +113,10 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             # News
             if category == "Any":
                 for item in categories:
-                    news_data = get_news(item, 10)
+                    news_data = get_news(item, 20)
                     news_data = news_data['articles']
             else:
-                news_data = get_news(category, 50)
+                news_data = get_news(category, 100)
                 news_data = news_data['articles']
 
             combined_data = tweet_data + news_data
@@ -136,8 +136,8 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             for idx, data_row in enumerate(combined_data):
                 data_row["goodness_score"] = goodness_score[idx]
 
-            combined_data = sorted(news_data, key=lambda x: x['goodness_score'], reverse=True)
-            combined_data = combined_data[:20]
+            combined_data = sorted(combined_data, key=lambda x: x['goodness_score'], reverse=True)
+            combined_data = combined_data[:30]
 
             #Calculate user doc sim score
             for article in combined_data:
