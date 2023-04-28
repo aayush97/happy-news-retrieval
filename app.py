@@ -326,50 +326,52 @@ def events():
     request_data = request.get_json()
     # user = body['user']
     # category = body['actions'][0]['value']
-    category = request_data['action']
+    category = "Sports"
     tweet_data = get_tweets(category)
-
-    # Twitter
-    tweet_texts = []
-    for i in tweet_data:
-        tweet_texts.append(i["description"])
-
-    goodness_score = get_goodness_score(tweet_texts)
-    for idx, data_row in enumerate(tweet_data):
-        data_row["score"] = (goodness_score[idx])
-
-    tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
-
-    tweet_data = tweet_data[:5]
-
     # News
-    news_texts = []
-
     if category == "Any":
         for item in categories:
-            news_data = get_news(item, 5)
+            news_data = get_news(item, 20)
             news_data = news_data['articles']
 
-            for i in news_data:
-                news_texts.append(i["description"])
     else:
-        news_data = get_news(category, 20)
+        news_data = get_news(category, 100)
         news_data = news_data['articles']
 
-        for i in news_data:
-            news_texts.append(i["description"])
+    combined_data = tweet_data + news_data
 
-    goodness_score = get_goodness_score(news_texts)
+    cleaned = []
+    for i in combined_data:
+        if not i["description"] == None:
+            cleaned.append(i)
 
-    for idx, data_row in enumerate(news_data):
-        data_row["score"] = goodness_score[idx]
+    combined_data = cleaned
 
-    news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
-    news_data = news_data[:5]
+    combined_data_text = []
+    for i in combined_data:
+        combined_data_text.append(i["description"])
 
-    total_data = tweet_data + news_data
-    total_data = np.random.choice(total_data, size=5, replace=False)
-    return jsonify(total_data.tolist())
+    goodness_score = get_goodness_score(combined_data_text)
+
+    for idx, data_row in enumerate(combined_data):
+        data_row["goodness_score"] = goodness_score[idx]
+
+    combined_data = sorted(combined_data, key=lambda x: x['goodness_score'], reverse=True)
+    combined_data = combined_data[:20]
+
+    user_vector_file = os.path.join(os.getcwd(), f'user_vectors/U04KKFYCSFL.npy')
+    user_vector = np.load(user_vector_file)
+
+    for article in combined_data:
+        score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
+        article["user_doc_sim_score"] = score
+
+    combined_data = sorted(combined_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
+    combined_data = combined_data[:5]
+
+    print(combined_data)
+
+    return jsonify(combined_data)
 
 @bolt_app.action(re.compile("(category)"))
 def approve_request(client, ack, body, say):
