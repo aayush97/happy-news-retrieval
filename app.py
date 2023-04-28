@@ -119,9 +119,9 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             goodness_score = get_goodness_score(tweet_texts)
 
             for idx, data_row in enumerate(tweet_data):
-                data_row["score"] = (goodness_score[idx])
+                data_row["goodness_score"] = (goodness_score[idx])
 
-            tweet_data = sorted(tweet_data, key=lambda x: x['score'], reverse=True)
+            tweet_data = sorted(tweet_data, key=lambda x: x['goodness_score'], reverse=True)
 
             tweet_data = tweet_data[:10]
 
@@ -145,9 +145,9 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             goodness_score = get_goodness_score(news_texts)
 
             for idx, data_row in enumerate(news_data):
-                data_row["score"] = goodness_score[idx]
+                data_row["goodness_score"] = goodness_score[idx]
 
-            news_data = sorted(news_data, key=lambda x: x['score'], reverse=True)
+            news_data = sorted(news_data, key=lambda x: x['goodness_score'], reverse=True)
             news_data = news_data[:20]
 
             total_data = tweet_data + news_data
@@ -202,8 +202,24 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                         "value": str(data["db_id"]),
                         "url": data["url"],
                         "action_id": "click_feedback"
-                    }
+                    },
+                }
+                )
+                blocks.append({
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "image",
+                            "image_url": "https://pbs.twimg.com/profile_images/625633822235693056/lNGUneLX_400x400.jpg",
+                            "alt_text": "Happy image"
+                        },
+                        {
+                            "type": "mrkdwn",
+                            "text": "Sentiment score: *" + str(round(data["goodness_score"],2)) + "*" 
+                        }
+                    ]
                 })
+                #+ " Similarity score: *" + str(round(data["user_doc_sim_score"],2)) + "*"
                 blocks.append({
                     "type": "divider"
                 })
