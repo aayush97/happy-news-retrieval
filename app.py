@@ -110,58 +110,44 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 user_vector = add_user(slack_user_id, initial_uv)
 
             tweet_data = get_tweets(category)
-
-            # Twitter
-            tweet_texts = []
-            for i in tweet_data:
-                tweet_texts.append(i["description"])
-
-            goodness_score = get_goodness_score(tweet_texts)
-
-            for idx, data_row in enumerate(tweet_data):
-                data_row["goodness_score"] = (goodness_score[idx])
-
-            tweet_data = sorted(tweet_data, key=lambda x: x['goodness_score'], reverse=True)
-
-            tweet_data = tweet_data[:10]
-
             # News
-            news_texts = []
-
             if category == "Any":
                 for item in categories:
                     news_data = get_news(item, 10)
                     news_data = news_data['articles']
-                    
-                    for i in news_data:
-                        news_texts.append(i["description"])
             else:
                 news_data = get_news(category, 50)
                 news_data = news_data['articles']
 
-                for i in news_data:
-                    news_texts.append(i["description"])
+            combined_data = tweet_data + news_data
+            cleaned = []
+            for i in combined_data:
+                if not i["description"] == None:
+                    cleaned.append(i)
 
-            goodness_score = get_goodness_score(news_texts)
+            combined_data = cleaned
 
-            for idx, data_row in enumerate(news_data):
+            combined_data_text = []
+            for i in combined_data:
+                combined_data_text.append(i["description"])
+
+            goodness_score = get_goodness_score(combined_data_text)
+
+            for idx, data_row in enumerate(combined_data):
                 data_row["goodness_score"] = goodness_score[idx]
 
-            news_data = sorted(news_data, key=lambda x: x['goodness_score'], reverse=True)
-            news_data = news_data[:20]
-
-            total_data = tweet_data + news_data
-            #total_data = np.random.choice(total_data, size=5, replace=False)
+            combined_data = sorted(news_data, key=lambda x: x['goodness_score'], reverse=True)
+            combined_data = combined_data[:20]
 
             #Calculate user doc sim score
-            for article in total_data:
+            for article in combined_data:
                 score = get_similarity_between_user_doc_vectors(user_vector, article["description"])
                 article["user_doc_sim_score"] = score
 
-            total_data = sorted(total_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
-            total_data = total_data[:5]
+            combined_data = sorted(combined_data, key=lambda x: x['user_doc_sim_score'], reverse=True)
+            combined_data = combined_data[:5]
 
-            for article in total_data:
+            for article in combined_data:
                 article_db = add_article(article["description"])
                 article["db_id"] = article_db["id"]
 
@@ -186,7 +172,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 ]
             })
 
-            for idx, data in enumerate(total_data):
+            for idx, data in enumerate(combined_data):
                 blocks.append({
                     "type": "section",
                     "text": {
