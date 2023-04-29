@@ -113,7 +113,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             # News
             if category == "Any":
                 for item in categories:
-                    news_data = get_news(item, 20)
+                    news_data = get_news(item, 100)
                     news_data = news_data['articles']
             else:
                 news_data = get_news(category, 100)
