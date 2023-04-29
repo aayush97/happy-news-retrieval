@@ -201,11 +201,10 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "Sentiment score: *" + str(round(data["goodness_score"],2)) + "*" 
+                            "text": "Sentiment score: *" + str(round(data["goodness_score"],2)) + "*" + " Similarity score: *" + str(round(data["user_doc_sim_score"],2)) + "*"
                         }
                     ]
                 })
-                #+ " Similarity score: *" + str(round(data["user_doc_sim_score"],2)) + "*"
                 blocks.append({
                     "type": "divider"
                 })
