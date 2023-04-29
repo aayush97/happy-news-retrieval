@@ -53,7 +53,7 @@ def update_user_vector_category(user_vector, category, step_size=0.2, reg=0.1):
     category_vector = category_vector.squeeze(
     ) / np.linalg.norm(category_vector.squeeze())
     new_user_vector = user_vector - step_size * \
-        ((np.dot(user_vector, category_vector) - 2)
+        ((np.dot(user_vector, category_vector) - 1)
          * category_vector + reg*user_vector)
     return new_user_vector
 
