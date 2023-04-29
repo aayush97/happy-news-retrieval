@@ -113,7 +113,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             # News
             if category == "Any":
                 for item in categories:
-                    news_data = get_news(item, 20)
+                    news_data = get_news(item, 100)
                     news_data = news_data['articles']
             else:
                 news_data = get_news(category, 100)
@@ -137,7 +137,14 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                 data_row["goodness_score"] = goodness_score[idx]
 
             combined_data = sorted(combined_data, key=lambda x: x['goodness_score'], reverse=True)
-            combined_data = combined_data[:30]
+
+            good_data = []
+            for i in combined_data:
+                if i['goodness_score'] > 0.3:
+                    good_data.append(i)
+
+            if len(good_data) >=5:
+                combined_data = good_data
 
             #Calculate user doc sim score
             for article in combined_data:
@@ -201,11 +208,10 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
                         },
                         {
                             "type": "mrkdwn",
-                            "text": "Sentiment score: *" + str(round(data["goodness_score"],2)) + "*" 
+                            "text": "Sentiment score: *" + str(round(data["goodness_score"],2)) + "*" + " Similarity score: *" + str(round(data["user_doc_sim_score"],2)) + "*"
                         }
                     ]
                 })
-                #+ " Similarity score: *" + str(round(data["user_doc_sim_score"],2)) + "*"
                 blocks.append({
                     "type": "divider"
                 })
