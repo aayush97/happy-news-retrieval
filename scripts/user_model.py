@@ -39,8 +39,10 @@ def update_user_vector_adaptive(user_vector, tweet, count):
 
 def update_user_vector_cosine_similarity(user_vector, tweet, clicked=1, step_size=0.5, reg=0.1):
     tweet_vector = text2vec(tweet)
+    user_vector = user_vector.squeeze()/np.linalg.norm(user_vector.squeeze())
+    tweet_vector = tweet_vector.squeeze()/np.linalg.norm(tweet_vector.squeeze())
     new_user_vector = user_vector - step_size * \
-        ((np.dot(user_vector.squeeze(), tweet_vector.squeeze()) - clicked)
+        ((np.dot(user_vector, tweet_vector) - clicked)
          * tweet_vector + reg*user_vector)
     return new_user_vector
 
