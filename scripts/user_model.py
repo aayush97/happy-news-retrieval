@@ -49,8 +49,11 @@ def update_user_vector_cosine_similarity(user_vector, tweet, clicked=1, step_siz
 
 def update_user_vector_category(user_vector, category, step_size=0.2, reg=0.1):
     category_vector = np.load(f'data/{category.lower()}.npy')
+    user_vector = user_vector.squeeze()/np.linalg.norm(user_vector.squeeze())
+    category_vector = category_vector.squeeze(
+    ) / np.linalg.norm(category_vector.squeeze())
     new_user_vector = user_vector - step_size * \
-        ((np.dot(user_vector.squeeze(), category_vector.squeeze()) - 2)
+        ((np.dot(user_vector, category_vector) - 2)
          * category_vector + reg*user_vector)
     return new_user_vector
 
