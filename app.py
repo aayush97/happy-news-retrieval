@@ -92,13 +92,14 @@ category_blocks = [
 ]
 
 def emoji(category):
-    if(category == "puppies"):
+    x = category.lower()
+    if(x == "puppies"):
         return ":dog:"
-    elif (category == "cats"): 
+    elif (x == "cats"): 
         return ":smile_cat:"
-    elif (category == "sports"):
+    elif (x == "sports"):
         return ":football:"
-    elif (category== "nature"):
+    elif (x== "nature"):
         return ":palm_tree:"
     else:
         return ":simple_smile:"
