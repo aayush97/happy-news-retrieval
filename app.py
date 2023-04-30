@@ -91,13 +91,25 @@ category_blocks = [
         },
 ]
 
+def emoji(category):
+    if(category == "puppies"):
+        return ":dog:"
+    elif (category == "cat"): 
+        return ":smile_cat:"
+    elif (category == "sports"):
+        return ":football:"
+    elif (category== "nature"):
+        return ":palm_tree:"
+    else:
+        return ":simple_smile:"
+
 def provide_recommendations(client, channel_id, slack_user_id, slack_username, category):
     with app.app_context():
         try:
             client.chat_postEphemeral(
                 channel=channel_id,
                 user=slack_user_id,
-                text= " Processing :dog: "
+                text= " Processing " + emoji(category) 
             )
 
             user_vector_file = os.path.join(os.getcwd(), f'user_vectors/{slack_user_id}.npy')
