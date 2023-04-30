@@ -125,13 +125,13 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             tweet_data = get_tweets(category)
             # News
             news_data = []
-            if category == "Any":
-                for item in categories:
-                    data = get_news(item, 100)
-                    news_data += data['articles']
-            else:
-                news_data = get_news(category, 100)
-                news_data = news_data['articles']
+            # if category == "Any":
+            #     for item in categories:
+            #         data = get_news(item, 100)
+            #         news_data += data['articles']
+            # else:
+            #     news_data = get_news(category, 100)
+            #     news_data = news_data['articles']
 
             combined_data = tweet_data + news_data
             cleaned = []
