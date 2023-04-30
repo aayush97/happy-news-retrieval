@@ -111,10 +111,11 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
 
             tweet_data = get_tweets(category)
             # News
+            news_data = []
             if category == "Any":
                 for item in categories:
-                    news_data = get_news(item, 100)
-                    news_data = news_data['articles']
+                    data = get_news(item, 100)
+                    news_data += data['articles']
             else:
                 news_data = get_news(category, 100)
                 news_data = news_data['articles']
@@ -136,7 +137,7 @@ def provide_recommendations(client, channel_id, slack_user_id, slack_username, c
             for idx, data_row in enumerate(combined_data):
                 data_row["goodness_score"] = goodness_score[idx]
 
-            combined_data = sorted(combined_data, key=lambda x: x['goodness_score'], reverse=True)
+            #combined_data = sorted(combined_data, key=lambda x: x['goodness_score'], reverse=True)
 
             good_data = []
             for i in combined_data:
