@@ -134,3 +134,5 @@ twitter_creds.json
 
 user_vectors/
 models/
+
+*.gif
