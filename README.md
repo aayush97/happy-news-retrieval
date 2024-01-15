@@ -52,5 +52,8 @@ python init_db.py
   		'tweet_id' : "12A12344",
   		'user_id'  : "12345678"
 
+# Website
+Check out our project website at: https://anuskapant.github.io/happynewsretrieval/ 
+
   	}
 ```
