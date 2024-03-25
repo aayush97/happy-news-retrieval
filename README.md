@@ -1,4 +1,4 @@
-# happy-news-retrieval [[Illustrative Description]([url](https://anuskapant.github.io/happynewsretrieval/ ))]
+# happy-news-retrieval [[Illustrative Description](https://anuskapant.github.io/happynewsretrieval/ )]
 Retrieve happy news from online sources to promote positivity across the web
 
 
