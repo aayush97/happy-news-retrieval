@@ -1,8 +1,8 @@
-# happy-news-retrieval
+# happy-news-retrieval [[Illustrative Description]([url](https://anuskapant.github.io/happynewsretrieval/ ))]
 Retrieve happy news from online sources to promote positivity across the web
 
 
-###Setup
+### Setup
 1. create a database in postgres cli
 ```
 psql postgres
@@ -15,7 +15,7 @@ GRANT ALL PRIVILEGES ON DATABASE happy_news_retrieval_db TO admin;
 python init_db.py
 ```
 
-###twitter api documentation
+### twitter api documentation
 
  - [search_tweets] (https://docs.tweepy.org/en/stable/api.html#tweepy.API.search_tweets)
  	get tweets in the last week
@@ -54,5 +54,3 @@ python init_db.py
 
   	}
 ```
-# Website
-Check out our project website at: https://anuskapant.github.io/happynewsretrieval/ 
